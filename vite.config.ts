@@ -14,9 +14,9 @@ export default defineConfig({
       output: {
         manualChunks: {
           plots: ['@ant-design/plots'],
-        }
-      }
-    }
+        },
+      },
+    },
   },
   server: {
     port: 3000,

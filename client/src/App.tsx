@@ -101,9 +101,8 @@ export default function App() {
             b: item['专业描述向量'][1],
           }))}
           onEvent={(_, e) => {
-            if (e.type === 'click' && e.data) {
+            if (e.type === 'click' && e.data && e.data.data) {
               const data = e.data.data as MajorData
-              if (!data) return
               if (openRef.current) return
               modal.info({
                 title: (
@@ -181,6 +180,50 @@ export default function App() {
                 a: item['专业描述向量'][0],
                 b: item['专业描述向量'][1],
               }))}
+            onEvent={(_, e) => {
+              if (e.type === 'click' && e.data && e.data.data) {
+                const data = e.data.data as MajorData
+                if (openRef.current) {
+                  return
+                }
+                modal.info({
+                  title: (
+                    <div className='font-semibold flex items-center gap-2'>
+                      <div>
+                        {data['专业名称']}
+                      </div>
+                      <div>
+                        <Tag color='blue' className='!m-0'>
+                          {data['专业代码']}
+                        </Tag>
+                      </div>
+                      <div>
+                        <Tag color='blue' className='!m-0'>
+                          {data['学科门类']}
+                        </Tag>
+                      </div>
+                      <div>
+                        <Tag color='blue' className='!m-0'>
+                          {data['专业类']}
+                        </Tag>
+                      </div>
+                    </div>
+                  ),
+                  content: (
+                    <div className='text-balance text-gray-800'>
+                      {data['专业描述文本']}
+                    </div>
+                  ),
+                  width: 600,
+                  okText: '关闭',
+                  okType: 'default',
+                  onOk: () => {
+                    openRef.current = false
+                  },
+                })
+                openRef.current = true
+              }
+            }}
           />
         </div>
       ))}
