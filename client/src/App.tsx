@@ -103,10 +103,9 @@ export default function App() {
           onEvent={(_, e) => {
             if (e.type === 'click' && e.data) {
               const data = e.data.data as MajorData
+              if (!data) return
               if (openRef.current) return
-              openRef.current = true
               modal.info({
-                // title: `${data['专业名称']} (${data['专业代码']}) - ${data['学科门类']}${data['专业类']}`,
                 title: (
                   <div className='font-semibold flex items-center gap-2'>
                     <div>
@@ -141,6 +140,7 @@ export default function App() {
                   openRef.current = false
                 },
               })
+              openRef.current = true
             }
           }}
         />
