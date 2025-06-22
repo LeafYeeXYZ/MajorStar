@@ -8,6 +8,16 @@ import 'react-dom'
 
 export default defineConfig({
   root: './client',
+  build: {
+    target: ['chrome110', 'firefox115', 'safari16', 'edge110'],
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          plots: ['@ant-design/plots'],
+        }
+      }
+    }
+  },
   server: {
     port: 3000,
   },
