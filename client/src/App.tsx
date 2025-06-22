@@ -1,9 +1,9 @@
 import { type MajorData } from '../../lib/types.ts'
 import { Scatter } from '@ant-design/plots'
-import { Button, Modal, Tag } from 'antd'
+import { Button, Modal, Tag, Switch } from 'antd'
 import { ArrowDownOutlined } from '@ant-design/icons'
 import { max, min } from '@psych/lib'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 
 const raw = await fetch('/data.json')
 const { data }: { data: MajorData[] } = await raw.json()
@@ -47,14 +47,25 @@ const configs: {
 export default function App() {
   const [modal, contextHolder] = Modal.useModal()
   const openRef = useRef<boolean>(false)
+  const [showLabels, setShowLabels] = useState<boolean>(true)
   return (
     <div className='w-dvw flex flex-col items-center px-4 md:px-8 lg:px-12 gap-8'>
       {contextHolder}
       <div className='text-4xl font-semibold mt-20'>
         专业星云
       </div>
-      <div className='mb-10 text-gray-600'>
+      <div className='text-gray-600 text-balance text-center'>
         相似的专业会聚集在一起, 鼠标悬停可查看专业信息, 点击可查看专业介绍
+      </div>
+      <div className='mb-10'>
+        <Switch
+          checkedChildren='显示标签'
+          unCheckedChildren='隐藏标签'
+          checked={showLabels}
+          onChange={(checked) => {
+            setShowLabels(checked)
+          }}
+        />
       </div>
       <div className='grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 max-w-4xl mb-8'>
         {subjects.map((subject) => (
@@ -78,13 +89,13 @@ export default function App() {
             x: { domain: [-1.8, 2.7] },
             y: { domain: [-2.2, 2.1] },
           }}
-          labels={[
+          labels={showLabels ? [
             {
               text: '专业名称',
               style: { dy: -20 },
               transform: [{ type: 'overlapHide' }],
             },
-          ]}
+          ] : undefined}
           tooltip={{
             title: '',
             items: [
@@ -156,13 +167,13 @@ export default function App() {
             yField='b'
             colorField='专业类'
             scale={configs[index]}
-            labels={[
+            labels={showLabels ? [
               {
                 text: '专业名称',
                 style: { dy: -20 },
                 transform: [{ type: 'overlapHide' }],
               },
-            ]}
+            ] : undefined}
             tooltip={{
               title: '',
               items: [
