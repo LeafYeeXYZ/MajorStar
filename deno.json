@@ -1,0 +1,41 @@
+{
+  "tasks": {
+    "dev": "deno run -A --node-modules-dir=auto npm:vite",
+    "build": "deno run -A --node-modules-dir=auto npm:vite build"
+  },
+  "fmt": {
+    "semiColons": false,
+    "singleQuote": true
+  },
+  "nodeModulesDir": "auto",
+  "imports": {
+    "@ant-design/icons": "npm:@ant-design/icons@^6.0.0",
+    "@ant-design/plots": "npm:@ant-design/plots@^2.5.0",
+    "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.4",
+    "@psych/lib": "jsr:@psych/lib@^1.24.0",
+    "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.1.10",
+    "@types/react": "npm:@types/react@^19.1.2",
+    "@vitejs/plugin-react": "npm:@vitejs/plugin-react@^4.4.1",
+    "antd": "npm:antd@^5.26.1",
+    "ml-pca": "npm:ml-pca@^4.1.1",
+    "openai": "npm:openai@^5.6.0",
+    "react": "npm:react@^19.1.0",
+    "react-dom": "npm:react-dom@^19.1.0",
+    "tailwindcss": "npm:tailwindcss@^4.1.10",
+    "vite": "npm:vite@^6.3.2"
+  },
+  "compilerOptions": {
+    "types": [
+      "react",
+      "react-dom",
+      "@types/react"
+    ],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "deno.ns"
+    ],
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
+  }
+}
