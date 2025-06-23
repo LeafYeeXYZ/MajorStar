@@ -127,7 +127,7 @@ async function applyPCA() {
   const inputFilePath = resolve(import.meta.dirname, '../lib/data.json')
   const outputFilePath = resolve(
     import.meta.dirname,
-    '../client/public/data.json',
+    '../client/public/data_pca.json',
   )
   const inputData: OutputData[] = JSON.parse(
     await readFile(inputFilePath, 'utf-8'),
