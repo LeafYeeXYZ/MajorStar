@@ -1,407 +1,348 @@
 import { type MajorData } from '../../lib/types.ts'
-import { Scatter } from '@ant-design/plots'
-import { Button, Modal, Popover, Select, Tag } from 'antd'
-import {
-  ArrowDownOutlined,
-  InfoCircleOutlined,
-  SettingOutlined,
-} from '@ant-design/icons'
-import { max, min } from '@psych/lib'
-import { useMemo, useRef, useState } from 'react'
+import { Scatter, type ScatterConfig } from '@ant-design/plots'
+import { Button, Modal, Popover, Select, Tag, Tour, type TourProps } from 'antd'
+import { InfoCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { config, data as d, subjects } from './data.ts'
 
-const [rawUMAP, rawPCA] = await Promise.all([
-  fetch('/data_umap.json'),
-  fetch('/data_pca.json'),
-])
-const [jsonUMAP, jsonPCA] = await Promise.all([
-  rawUMAP.json(),
-  rawPCA.json(),
-])
-const dataUMAP: MajorData[] = jsonUMAP.data
-const dataPCA: MajorData[] = jsonPCA.data
-
-const subjects: string[] = [
-  '哲学',
-  '经济学',
-  '法学',
-  '教育学',
-  '文学',
-  '历史学',
-  '理学',
-  '工学',
-  '农学',
-  '医学',
-  '管理学',
-  '艺术学',
-]
-
-const configUMAP: {
-  all: {
-    x: { domain: [number, number] }
-    y: { domain: [number, number] }
-  }
-  subjects: {
-    x: { domain: [number, number] }
-    y: { domain: [number, number] }
-  }[]
-} = {
-  all: {
-    x: {
-      domain: [
-        +min(dataUMAP.map((item) => item['专业描述向量'][0])).toFixed(2) - 0.1,
-        +max(dataUMAP.map((item) => item['专业描述向量'][0])).toFixed(2) + 0.1,
-      ],
-    },
-    y: {
-      domain: [
-        +min(dataUMAP.map((item) => item['专业描述向量'][1])).toFixed(2) - 0.1,
-        +max(dataUMAP.map((item) => item['专业描述向量'][1])).toFixed(2) + 0.1,
-      ],
-    },
-  },
-  subjects: subjects.map((subject) => {
-    const filteredData = dataUMAP.filter((item) => item['学科门类'] === subject)
-    const xValues = filteredData.map((item) => item['专业描述向量'][0])
-    const yValues = filteredData.map((item) => item['专业描述向量'][1])
-    return {
-      x: {
-        domain: [
-          +(min(xValues) - 0.1).toFixed(2),
-          +(max(xValues) + 0.1).toFixed(2),
-        ],
-      },
-      y: {
-        domain: [
-          +(min(yValues) - 0.1).toFixed(2),
-          +(max(yValues) + 0.1).toFixed(2),
-        ],
-      },
-    }
-  }),
+function getIsTourPlayed(): boolean {
+  const isPlayed = localStorage.getItem('isTourPlayed')
+  return isPlayed === 'true'
 }
-const configPCA: {
-  all: {
-    x: { domain: [number, number] }
-    y: { domain: [number, number] }
-  }
-  subjects: {
-    x: { domain: [number, number] }
-    y: { domain: [number, number] }
-  }[]
-} = {
-  all: {
-    x: {
-      domain: [
-        +min(dataPCA.map((item) => item['专业描述向量'][0])).toFixed(2) - 0.1,
-        +max(dataPCA.map((item) => item['专业描述向量'][0])).toFixed(2) + 0.1,
-      ],
-    },
-    y: {
-      domain: [
-        +min(dataPCA.map((item) => item['专业描述向量'][1])).toFixed(2) - 0.1,
-        +max(dataPCA.map((item) => item['专业描述向量'][1])).toFixed(2) + 0.1,
-      ],
-    },
-  },
-  subjects: subjects.map((subject) => {
-    const filteredData = dataPCA.filter((item) => item['学科门类'] === subject)
-    const xValues = filteredData.map((item) => item['专业描述向量'][0])
-    const yValues = filteredData.map((item) => item['专业描述向量'][1])
-    return {
-      x: {
-        domain: [
-          +(min(xValues) - 0.1).toFixed(2),
-          +(max(xValues) + 0.1).toFixed(2),
-        ],
-      },
-      y: {
-        domain: [
-          +(min(yValues) - 0.1).toFixed(2),
-          +(max(yValues) + 0.1).toFixed(2),
-        ],
-      },
-    }
-  }),
+function setIsTourPlayed(isPlayed: boolean): void {
+  localStorage.setItem('isTourPlayed', String(isPlayed))
 }
 
 export default function App() {
   const [modal, contextHolder] = Modal.useModal()
   const openRef = useRef<boolean>(false)
+
   const [showLabels, setShowLabels] = useState<boolean>(true)
   const [method, setMethod] = useState<'UMAP' | 'PCA'>('UMAP')
-  const data = useMemo(() => {
-    return method === 'UMAP' ? dataUMAP : dataPCA
-  }, [method])
-  const config = useMemo(() => {
-    return method === 'UMAP' ? configUMAP : configPCA
-  }, [method])
+  const [catagory, setCategory] = useState<string>('全部专业')
+
+  const infoRef = useRef<HTMLDivElement>(null)
+  const helpRef = useRef<HTMLDivElement>(null)
+  const catagoryRef = useRef<HTMLDivElement>(null)
+  const showLabelsRef = useRef<HTMLDivElement>(null)
+  const methodRef = useRef<HTMLDivElement>(null)
+  const steps: TourProps['steps'] = useMemo(() => {
+    return [
+      {
+        title: '使用说明',
+        description:
+          '欢迎使用专业星云! 这个小教程将帮助你了解如何使用这个应用.',
+      },
+      {
+        title: '专业星云',
+        description:
+          '图中的每个点都代表一个专业, 共845个 (包含2025年普通高等学校本科专业目录中的所有专业).',
+      },
+      {
+        title: '专业相似度',
+        description:
+          '在图中, 专业之间的距离表示它们的相似度. 距离越近, 相似度越高.',
+      },
+      {
+        title: '专业分类',
+        description:
+          '你可以在这里选择专业星云中要显示的指定的学科门类. 默认显示全部12个门类的专业.',
+        target: () => catagoryRef.current!,
+      },
+      {
+        title: '专业名称标签',
+        description: '你可以在这里选择是否在专业星云中显示专业名称标签.',
+        target: () => showLabelsRef.current!,
+      },
+      {
+        title: '向量降维方法',
+        description:
+          '你可以在这里选择使用的向量降维方法 (影响专业星云的分布形状). 默认使用UMAP, 也可以选择PCA.',
+        target: () => methodRef.current!,
+      },
+      {
+        title: '专业基本信息',
+        description:
+          '把鼠标悬停在专业点上, 可以查看该专业的专业代码、学科门类、专业类等基本信息.',
+      },
+      {
+        title: '专业详细描述',
+        description: '点击专业点, 可以查看该专业的详细描述.',
+      },
+      {
+        title: '关于',
+        description:
+          '点击左上角的"信息"按钮, 查看作者、开源地址、数据来源等信息.',
+        target: () => infoRef.current!,
+      },
+      {
+        title: '帮助',
+        description: '点击左上角的"帮助"按钮, 可以重新打开这个小教程.',
+        target: () => helpRef.current!,
+      },
+      {
+        title: '专业星云',
+        description:
+          '希望你喜欢这个小应用! 如果有任何问题或建议, 欢迎在GitHub上提交issue.',
+      },
+    ]
+  }, [])
+  const [tourOpen, setTourOpen] = useState<boolean>(false)
+  useEffect(() => {
+    if (!getIsTourPlayed()) {
+      setTourOpen(true)
+    }
+  }, [])
+
+  const colorField: ScatterConfig['colorField'] = useMemo(() => {
+    return catagory === '全部专业' ? '学科门类' : '专业类'
+  }, [catagory])
+
+  const scale: ScatterConfig['scale'] = useMemo(() => {
+    if (catagory === '全部专业') {
+      return method === 'UMAP' ? config.umap.all : config.pca.all
+    }
+    return method === 'UMAP'
+      ? config.umap.subjects[subjects.indexOf(catagory)]
+      : config.pca.subjects[subjects.indexOf(catagory)]
+  }, [method, catagory])
+
+  const label: ScatterConfig['label'] = useMemo(() => {
+    return showLabels
+      ? [
+        {
+          text: '专业名称',
+          style: { dy: -20 },
+          transform: [{ type: 'overlapHide' }],
+        },
+      ]
+      : undefined
+  }, [showLabels])
+
+  const data: ScatterConfig['data'] = useMemo(() => {
+    if (catagory === '全部专业') {
+      return method === 'UMAP' ? d.umap.all : d.pca.all
+    }
+    return method === 'UMAP'
+      ? d.umap.subjects[subjects.indexOf(catagory)]
+      : d.pca.subjects[subjects.indexOf(catagory)]
+  }, [method, catagory])
+
+  const onEvent: ScatterConfig['onEvent'] = useMemo(() => {
+    return (_, e) => {
+      if (e.type === 'click' && e.data && e.data.data) {
+        const data = e.data.data as MajorData
+        if (openRef.current) return
+        modal.info({
+          title: (
+            <div className='font-semibold flex items-center gap-2'>
+              <div>
+                {data['专业名称']}
+              </div>
+              <div>
+                <Tag color='blue' className='!m-0'>
+                  {data['专业代码']}
+                </Tag>
+              </div>
+              <div>
+                <Tag color='blue' className='!m-0'>
+                  {data['学科门类']}
+                </Tag>
+              </div>
+              <div>
+                <Tag color='blue' className='!m-0'>
+                  {data['专业类']}
+                </Tag>
+              </div>
+            </div>
+          ),
+          content: (
+            <div className='text-balance text-gray-800'>
+              {data['专业描述文本']}
+            </div>
+          ),
+          width: 600,
+          okText: '关闭',
+          okType: 'default',
+          onOk: () => {
+            openRef.current = false
+          },
+        })
+        openRef.current = true
+      }
+    }
+  }, [])
+
+  const tooltip: ScatterConfig['tooltip'] = useMemo(() => {
+    return {
+      title: '',
+      items: [
+        '专业名称',
+        '专业代码',
+        '学科门类',
+        '专业类',
+        '专业类代码',
+      ],
+    }
+  }, [])
+
   return (
-    <div className='relative w-dvw flex flex-col items-center px-4 md:px-8 lg:px-12 gap-8 pb-8 lg:pb-12'>
+    <div className='relative w-dvw h-dvh overflow-hidden'>
       {contextHolder}
-      <div className='absolute top-4 left-4 z-10'>
-        <Popover
-          content={
-            <div className='flex flex-col items-center gap-2 font-semibold'>
-              <div>
-                作者:{' '}
-                <a
-                  href='https://github.com/LeafYeeXYZ'
-                  className='text-blue-500 hover:underline'
-                >
-                  小叶子
-                </a>
-              </div>
-              <div>
-                GitHub:{' '}
-                <a
-                  href='https://github.com/LeafYeeXYZ/MajorStar'
-                  className='text-blue-500 hover:underline'
-                >
-                  MajorStar
-                </a>
-              </div>
-              <div>
-                专业数据来源: 普通高等学校本科专业目录 (2025年)
-              </div>
-              <div>
-                专业描述来源: AI生成, 仅供参考
-              </div>
-            </div>
-          }
-          trigger={['hover']}
-        >
-          <Button
-            icon={<InfoCircleOutlined />}
-            size='large'
-            type='text'
-          />
-        </Popover>
-      </div>
-      <div className='absolute top-4 right-4 z-10'>
-        <Popover
-          content={
-            <div className='flex flex-col items-center gap-4 font-semibold'>
-              <div className='flex items-center gap-2 justify-start w-full'>
-                <div>
-                  专业名称标签:
-                </div>
-                <Select
-                  value={showLabels}
-                  onChange={(value) => {
-                    setShowLabels(value)
-                  }}
-                  options={[
-                    { label: '显示', value: true },
-                    { label: '隐藏', value: false },
-                  ]}
-                />
-              </div>
-              <div className='flex items-center gap-2 justify-start w-full'>
-                <div>
-                  向量降维方法:
-                </div>
-                <Select
-                  value={method}
-                  onChange={(value) => {
-                    setMethod(value as 'UMAP' | 'PCA')
-                  }}
-                  options={[
-                    { label: 'UMAP', value: 'UMAP' },
-                    { label: 'PCA', value: 'PCA' },
-                  ]}
-                />
-              </div>
-            </div>
-          }
-          trigger={['hover', 'click']}
-        >
-          <Button
-            icon={<SettingOutlined />}
-            size='large'
-            type='text'
-          />
-        </Popover>
-      </div>
-      <div className='mt-20 flex items-center justify-center'>
-        <div className='text-4xl font-semibold'>
-          专业星云
+      <Tour
+        open={tourOpen}
+        steps={steps}
+        onClose={() => {
+          setTourOpen(false)
+        }}
+        onFinish={() => {
+          setTourOpen(false)
+          setIsTourPlayed(true)
+        }}
+      />
+      <header className='absolute top-0 left-0 w-full h-12 flex flex-row items-center z-10 px-4 pt-2 justify-between gap-4'>
+        <div className='flex items-center font-semibold gap-2'>
+          <div className='mr-0 lg:mr-2 text-nowrap text-2xl'>
+            专业星云
+          </div>
+          <div ref={infoRef}>
+            <Info />
+          </div>
+          <div ref={helpRef}>
+            <Help setTourOpen={setTourOpen} />
+          </div>
         </div>
-      </div>
-      <div className='text-gray-600 text-balance text-center'>
-        相似的专业会聚集在一起, 鼠标悬停可查看专业信息, 点击可查看专业介绍
-      </div>
-      <div className='grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 max-w-4xl mb-8'>
-        {subjects.map((subject) => (
-          <Button
-            key={subject}
-            type='text'
-            icon={<ArrowDownOutlined />}
-            href={`#${subject}`}
+        <div className='flex flex-row items-center gap-4 font-semibold flex-nowrap text-sm overflow-auto'>
+          <div
+            className='flex items-center gap-2 justify-start w-max'
+            ref={catagoryRef}
           >
-            {subject}门类
-          </Button>
-        ))}
-      </div>
-      <div className='w-full h-[85dvh] border rounded-lg'>
+            <div className='text-nowrap'>
+              学科门类:
+            </div>
+            <Select
+              className='!w-26'
+              value={catagory}
+              onChange={(value) => {
+                setCategory(value)
+              }}
+              options={[
+                { label: '全部专业', value: '全部专业' },
+                ...subjects.map((subject) => ({
+                  label: subject,
+                  value: subject,
+                })),
+              ]}
+            />
+          </div>
+          <div
+            className='flex items-center gap-2 justify-start w-max'
+            ref={showLabelsRef}
+          >
+            <div className='text-nowrap'>
+              专业名称标签:
+            </div>
+            <Select
+              className='!w-18'
+              value={showLabels}
+              onChange={(value) => {
+                setShowLabels(value)
+              }}
+              options={[
+                { label: '显示', value: true },
+                { label: '隐藏', value: false },
+              ]}
+            />
+          </div>
+          <div
+            className='flex items-center gap-2 justify-start w-max'
+            ref={methodRef}
+          >
+            <div className='text-nowrap'>
+              向量降维方法:
+            </div>
+            <Select
+              className='!w-22'
+              value={method}
+              onChange={(value) => {
+                setMethod(value as 'UMAP' | 'PCA')
+              }}
+              options={[
+                { label: 'UMAP', value: 'UMAP' },
+                { label: 'PCA', value: 'PCA' },
+              ]}
+            />
+          </div>
+        </div>
+      </header>
+      <section className='w-full h-full'>
         <Scatter
-          title='所有专业 (可按学科门类筛选)'
+          className='!pt-12'
           xField='a'
           yField='b'
-          colorField='学科门类'
-          scale={config.all}
-          labels={showLabels
-            ? [
-              {
-                text: '专业名称',
-                style: { dy: -20 },
-                transform: [{ type: 'overlapHide' }],
-              },
-            ]
-            : undefined}
-          tooltip={{
-            title: '',
-            items: [
-              '专业名称',
-              '专业代码',
-              '学科门类',
-              '专业类',
-              '专业类代码',
-            ],
-          }}
-          data={data.map((item) => ({
-            ...item,
-            a: item['专业描述向量'][0],
-            b: item['专业描述向量'][1],
-          }))}
-          onEvent={(_, e) => {
-            if (e.type === 'click' && e.data && e.data.data) {
-              const data = e.data.data as MajorData
-              if (openRef.current) return
-              modal.info({
-                title: (
-                  <div className='font-semibold flex items-center gap-2'>
-                    <div>
-                      {data['专业名称']}
-                    </div>
-                    <div>
-                      <Tag color='blue' className='!m-0'>
-                        {data['专业代码']}
-                      </Tag>
-                    </div>
-                    <div>
-                      <Tag color='blue' className='!m-0'>
-                        {data['学科门类']}
-                      </Tag>
-                    </div>
-                    <div>
-                      <Tag color='blue' className='!m-0'>
-                        {data['专业类']}
-                      </Tag>
-                    </div>
-                  </div>
-                ),
-                content: (
-                  <div className='text-balance text-gray-800'>
-                    {data['专业描述文本']}
-                  </div>
-                ),
-                width: 600,
-                okText: '关闭',
-                okType: 'default',
-                onOk: () => {
-                  openRef.current = false
-                },
-              })
-              openRef.current = true
-            }
-          }}
+          colorField={colorField}
+          shapeField='point'
+          scale={scale}
+          style={{ stroke: 'rgba(50,0,0,0.7)' }}
+          label={label}
+          tooltip={tooltip}
+          data={data}
+          onEvent={onEvent}
         />
-      </div>
-      {subjects.map((subject, index) => (
-        <div
-          key={subject}
-          id={subject}
-          className='w-full h-[85dvh] border rounded-lg'
-        >
-          <Scatter
-            title={`${subject}门类 (可按专业类筛选)`}
-            xField='a'
-            yField='b'
-            colorField='专业类'
-            scale={config.subjects[index]}
-            labels={showLabels
-              ? [
-                {
-                  text: '专业名称',
-                  style: { dy: -20 },
-                  transform: [{ type: 'overlapHide' }],
-                },
-              ]
-              : undefined}
-            tooltip={{
-              title: '',
-              items: [
-                '专业名称',
-                '专业代码',
-                '学科门类',
-                '专业类',
-                '专业类代码',
-              ],
-            }}
-            data={data
-              .filter((item) => item['学科门类'] === subject)
-              .map((item) => ({
-                ...item,
-                a: item['专业描述向量'][0],
-                b: item['专业描述向量'][1],
-              }))}
-            onEvent={(_, e) => {
-              if (e.type === 'click' && e.data && e.data.data) {
-                const data = e.data.data as MajorData
-                if (openRef.current) {
-                  return
-                }
-                modal.info({
-                  title: (
-                    <div className='font-semibold flex items-center gap-2'>
-                      <div>
-                        {data['专业名称']}
-                      </div>
-                      <div>
-                        <Tag color='blue' className='!m-0'>
-                          {data['专业代码']}
-                        </Tag>
-                      </div>
-                      <div>
-                        <Tag color='blue' className='!m-0'>
-                          {data['学科门类']}
-                        </Tag>
-                      </div>
-                      <div>
-                        <Tag color='blue' className='!m-0'>
-                          {data['专业类']}
-                        </Tag>
-                      </div>
-                    </div>
-                  ),
-                  content: (
-                    <div className='text-balance text-gray-800'>
-                      {data['专业描述文本']}
-                    </div>
-                  ),
-                  width: 600,
-                  okText: '关闭',
-                  okType: 'default',
-                  onOk: () => {
-                    openRef.current = false
-                  },
-                })
-                openRef.current = true
-              }
-            }}
-          />
-        </div>
-      ))}
+      </section>
     </div>
+  )
+}
+
+function Help({ setTourOpen }: { setTourOpen: (open: boolean) => void }) {
+  return (
+    <Button
+      icon={<QuestionCircleOutlined />}
+      onClick={() => {
+        setTourOpen(true)
+      }}
+    />
+  )
+}
+
+function Info() {
+  return (
+    <Popover
+      content={
+        <div className='flex flex-col items-center gap-[0.3rem] font-semibold'>
+          <div>
+            开源地址(GitHub):{' '}
+            <a
+              href='https://github.com/LeafYeeXYZ/MajorStar'
+              className='text-blue-500 hover:underline'
+              target='_blank'
+              rel='noopener noreferrer'
+            >
+              LeafYeeXYZ/MajorStar
+            </a>
+          </div>
+          <div>
+            专业数据来源: 普通高等学校本科专业目录 (2025年)
+          </div>
+          <div>
+            专业描述来源: AI生成, 仅供参考
+          </div>
+          <div>
+            作者:{' '}
+            <a
+              href='https://github.com/LeafYeeXYZ'
+              className='text-blue-500 hover:underline'
+              target='_blank'
+              rel='noopener noreferrer'
+            >
+              小叶子
+            </a>
+          </div>
+        </div>
+      }
+      trigger={['hover', 'click']}
+    >
+      <Button icon={<InfoCircleOutlined />} />
+    </Popover>
   )
 }
