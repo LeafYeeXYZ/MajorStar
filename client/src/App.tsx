@@ -94,10 +94,6 @@ export default function App() {
     }
   }, [])
 
-  const colorField: ScatterConfig['colorField'] = useMemo(() => {
-    return catagory === '全部专业' ? '学科门类' : '专业类'
-  }, [catagory])
-
   const scale: ScatterConfig['scale'] = useMemo(() => {
     if (catagory === '全部专业') {
       return method === 'UMAP' ? config.umap.all : config.pca.all
@@ -116,7 +112,7 @@ export default function App() {
           transform: [{ type: 'overlapHide' }],
         },
       ]
-      : undefined
+      : []
   }, [showLabels])
 
   const data: ScatterConfig['data'] = useMemo(() => {
@@ -280,7 +276,7 @@ export default function App() {
           className='!pt-12'
           xField='a'
           yField='b'
-          colorField={colorField}
+          colorField={catagory === '全部专业' ? '学科门类' : '专业类'}
           shapeField='point'
           scale={scale}
           style={{ stroke: 'rgba(50,0,0,0.7)' }}
