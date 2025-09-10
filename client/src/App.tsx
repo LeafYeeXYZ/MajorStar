@@ -18,14 +18,12 @@ export default function App() {
   const openRef = useRef<boolean>(false)
 
   const [showLabels, setShowLabels] = useState<boolean>(true)
-  const [method, setMethod] = useState<'UMAP' | 'PCA'>('UMAP')
   const [catagory, setCategory] = useState<string>('全部专业')
 
   const infoRef = useRef<HTMLDivElement>(null)
   const helpRef = useRef<HTMLDivElement>(null)
   const catagoryRef = useRef<HTMLDivElement>(null)
   const showLabelsRef = useRef<HTMLDivElement>(null)
-  const methodRef = useRef<HTMLDivElement>(null)
   const steps: TourProps['steps'] = useMemo(() => {
     return [
       {
@@ -53,12 +51,6 @@ export default function App() {
         title: '专业名称标签',
         description: '你可以在这里选择是否在专业星云中显示专业名称标签.',
         target: () => showLabelsRef.current!,
-      },
-      {
-        title: '向量降维方法',
-        description:
-          '你可以在这里选择使用的向量降维方法 (影响专业星云的分布形状). 默认使用UMAP, 也可以选择PCA.',
-        target: () => methodRef.current!,
       },
       {
         title: '专业基本信息',
@@ -96,12 +88,10 @@ export default function App() {
 
   const scale: ScatterConfig['scale'] = useMemo(() => {
     if (catagory === '全部专业') {
-      return method === 'UMAP' ? config.umap.all : config.pca.all
+      return config.all
     }
-    return method === 'UMAP'
-      ? config.umap.subjects[subjects.indexOf(catagory)]
-      : config.pca.subjects[subjects.indexOf(catagory)]
-  }, [method, catagory])
+    return config.subjects[subjects.indexOf(catagory)]
+  }, [catagory])
 
   const label: ScatterConfig['label'] = useMemo(() => {
     return showLabels
@@ -117,12 +107,10 @@ export default function App() {
 
   const data: ScatterConfig['data'] = useMemo(() => {
     if (catagory === '全部专业') {
-      return method === 'UMAP' ? d.umap.all : d.pca.all
+      return d.all
     }
-    return method === 'UMAP'
-      ? d.umap.subjects[subjects.indexOf(catagory)]
-      : d.pca.subjects[subjects.indexOf(catagory)]
-  }, [method, catagory])
+    return d.subjects[subjects.indexOf(catagory)]
+  }, [catagory])
 
   const onEvent: ScatterConfig['onEvent'] = useMemo(() => {
     return (_, e) => {
@@ -247,25 +235,6 @@ export default function App() {
               options={[
                 { label: '显示', value: true },
                 { label: '隐藏', value: false },
-              ]}
-            />
-          </div>
-          <div
-            className='flex items-center gap-2 justify-start w-max'
-            ref={methodRef}
-          >
-            <div className='text-nowrap'>
-              向量降维方法:
-            </div>
-            <Select
-              className='!w-22'
-              value={method}
-              onChange={(value) => {
-                setMethod(value as 'UMAP' | 'PCA')
-              }}
-              options={[
-                { label: 'UMAP', value: 'UMAP' },
-                { label: 'PCA', value: 'PCA' },
               ]}
             />
           </div>
