@@ -18,7 +18,7 @@
     "@vitejs/plugin-react": "npm:@vitejs/plugin-react@^4.7.0",
     "antd": "npm:antd@^5.27.3",
     "ml-pca": "npm:ml-pca@^4.1.1",
-    "openai": "npm:openai@^5.20.0",
+    "openai": "npm:openai@^5.20.1",
     "react": "npm:react@^19.1.1",
     "react-dom": "npm:react-dom@^19.1.1",
     "tailwindcss": "npm:tailwindcss@^4.1.13",

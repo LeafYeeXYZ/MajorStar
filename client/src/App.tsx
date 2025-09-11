@@ -1,7 +1,11 @@
 import { type MajorData } from '../../lib/types.ts'
 import { Scatter, type ScatterConfig } from '@ant-design/plots'
 import { Button, Modal, Popover, Select, Tag, Tour, type TourProps } from 'antd'
-import { InfoCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons'
+import {
+  InfoCircleOutlined,
+  QuestionCircleOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { config, data as d, subjects } from './data.ts'
 
@@ -9,6 +13,7 @@ function getIsTourPlayed(): boolean {
   const isPlayed = localStorage.getItem('isTourPlayed')
   return isPlayed === 'true'
 }
+
 function setIsTourPlayed(isPlayed: boolean): void {
   localStorage.setItem('isTourPlayed', String(isPlayed))
 }
@@ -19,11 +24,14 @@ export default function App() {
 
   const [showLabels, setShowLabels] = useState<boolean>(true)
   const [catagory, setCategory] = useState<string>('全部专业')
+  const [key, setKey] = useState<string>(crypto.randomUUID())
 
   const infoRef = useRef<HTMLDivElement>(null)
   const helpRef = useRef<HTMLDivElement>(null)
   const catagoryRef = useRef<HTMLDivElement>(null)
   const showLabelsRef = useRef<HTMLDivElement>(null)
+  const reloadRef = useRef<HTMLDivElement>(null)
+
   const steps: TourProps['steps'] = useMemo(() => {
     return [
       {
@@ -71,6 +79,12 @@ export default function App() {
         title: '帮助',
         description: '点击左上角的"帮助"按钮, 可以重新打开这个小教程.',
         target: () => helpRef.current!,
+      },
+      {
+        title: '重置',
+        description:
+          '在星云中框选可以显示指定区域的内容; 点击左上角的"重置"按钮, 可以重置视图.',
+        target: () => reloadRef.current!,
       },
       {
         title: '专业星云',
@@ -195,6 +209,14 @@ export default function App() {
           <div ref={helpRef}>
             <Help setTourOpen={setTourOpen} />
           </div>
+          <div ref={reloadRef}>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                setKey(crypto.randomUUID())
+              }}
+            />
+          </div>
         </div>
         <div className='flex flex-row items-center gap-4 font-semibold flex-nowrap text-sm overflow-auto'>
           <div
@@ -242,6 +264,7 @@ export default function App() {
       </header>
       <section className='w-full h-full'>
         <Scatter
+          key={key}
           className='!pt-12'
           xField='a'
           yField='b'
@@ -253,6 +276,7 @@ export default function App() {
           tooltip={tooltip}
           data={data}
           onEvent={onEvent}
+          interaction={{ brushFilter: true }}
         />
       </section>
     </div>

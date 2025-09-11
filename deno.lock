@@ -19,7 +19,7 @@
     "npm:antd@^5.27.3": "5.27.3_react@19.1.1_react-dom@19.1.1__react@19.1.1_dayjs@1.11.18",
     "npm:jstat-esm@2.0.2": "2.0.2",
     "npm:ml-pca@^4.1.1": "4.1.1",
-    "npm:openai@^5.20.0": "5.20.0",
+    "npm:openai@^5.20.1": "5.20.1",
     "npm:react-dom@^19.1.1": "19.1.1_react@19.1.1",
     "npm:react@^19.1.1": "19.1.1",
     "npm:tailwindcss@^4.1.13": "4.1.13",
@@ -1745,8 +1745,8 @@
     "node-releases@2.0.20": {
       "integrity": "sha512-7gK6zSXEH6neM212JgfYFXe+GmZQM+fia5SsusuBIUgnPheLFBmIPhtFoAQRj8/7wASYQnbDlHPVwY0BefoFgA=="
     },
-    "openai@5.20.0": {
-      "integrity": "sha512-Bmc2zLM/YWgFrDpXr9hwXqGGDdMmMpE9+qoZPsaHpn0Y/Qk1Vu26hNqXo7+nHdli+sLsXINvS1f8kR3NKhGKmA==",
+    "openai@5.20.1": {
+      "integrity": "sha512-UndCB0R5V3iB9I98NyF69zNP6YfwU4+Fjk0eW4HhooTm+Awlpm/MGjJTwJsyNV/qkH1NJi0GG+9odwukGTqExQ==",
       "bin": true
     },
     "pdfast@0.2.0": {
@@ -2373,7 +2373,7 @@
       "npm:@vitejs/plugin-react@^4.7.0",
       "npm:antd@^5.27.3",
       "npm:ml-pca@^4.1.1",
-      "npm:openai@^5.20.0",
+      "npm:openai@^5.20.1",
       "npm:react-dom@^19.1.1",
       "npm:react@^19.1.1",
       "npm:tailwindcss@^4.1.13",
