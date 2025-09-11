@@ -120,49 +120,6 @@ async function addDesc() {
   }
 }
 
-async function applyPCA() {
-  if (!import.meta.dirname) {
-    throw new Error('import.meta.dirname is not defined')
-  }
-  const inputFilePath = resolve(import.meta.dirname, '../lib/data.json')
-  const outputFilePath = resolve(
-    import.meta.dirname,
-    '../client/public/data_pca.json',
-  )
-  const inputData: OutputData[] = JSON.parse(
-    await readFile(inputFilePath, 'utf-8'),
-  ).data
-  const pca = new PCA(
-    inputData.map((item) => item['专业描述向量']),
-  )
-  const transformedData = inputData.map((item) => ({
-    ...item,
-    '专业描述向量': pca.predict([item['专业描述向量']], { nComponents: 2 })
-      .to1DArray(),
-  }))
-  // 标准化向量
-  const meanX = mean(transformedData.map((item) => item['专业描述向量'][0]))
-  const meanY = mean(transformedData.map((item) => item['专业描述向量'][1]))
-  const stdX = std(transformedData.map((item) => item['专业描述向量'][0]))
-  const stdY = std(transformedData.map((item) => item['专业描述向量'][1]))
-  for (const item of transformedData) {
-    item['专业描述向量'][0] = (item['专业描述向量'][0] - meanX) / stdX
-    item['专业描述向量'][1] = (item['专业描述向量'][1] - meanY) / stdY
-  }
-  const maxX = max(transformedData.map((item) => item['专业描述向量'][0]))
-  const minX = min(transformedData.map((item) => item['专业描述向量'][0]))
-  const maxY = max(transformedData.map((item) => item['专业描述向量'][1]))
-  const minY = min(transformedData.map((item) => item['专业描述向量'][1]))
-  console.log('标准化后X轴范围:', minX, '-', maxX)
-  console.log('标准化后Y轴范围:', minY, '-', maxY)
-  await writeFile(
-    outputFilePath,
-    JSON.stringify({ data: transformedData }, null, 2),
-    'utf-8',
-  )
-}
-
 if (import.meta.main) {
-  // await addDesc()
-  await applyPCA()
+  await addDesc()
 }

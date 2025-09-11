@@ -1,7 +1,6 @@
 export type InputData = {
   '学科门类': string
   '专业类': string
-  '专业类代码': string
   '专业名称': string
   '专业代码': string
   '专业描述文本'?: string
@@ -11,7 +10,6 @@ export type InputData = {
 export type OutputData = {
   '学科门类': string
   '专业类': string
-  '专业类代码': string
   '专业名称': string
   '专业代码': string
   '专业描述文本': string
