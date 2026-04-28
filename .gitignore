@@ -23,4 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-client/.vite
+data/raw_data.json
+data/major_data.json
