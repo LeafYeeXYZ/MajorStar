@@ -35,18 +35,18 @@ type ScatterConfig = {
 }
 
 type ScatterData = {
-  all: Omit<ClientData, 'embedding'> & {
-    a: number
-    b: number
-  }
-  subjects: (Omit<ClientData, 'embedding'> & {
+  all: (Omit<ClientData, 'embedding'> & {
     a: number
     b: number
   })[]
+  subjects: (Omit<ClientData, 'embedding'> & {
+    a: number
+    b: number
+  })[][]
 }
 
 const RAW_CLIENT_DATA_URL = '/data.json'
-
+const LABELS_OFFSET = 0.5
 export const SUBJECTS: Subject[] = [
   '哲学',
   '经济学',
@@ -92,10 +92,16 @@ export function useData() {
         const scatterConfig: ScatterConfig = {
           all: {
             x: {
-              domain: [+minEmbedding0.toFixed(2) - 0.1, +maxEmbedding0.toFixed(2) + 0.1],
+              domain: [
+                +minEmbedding0.toFixed(2) - LABELS_OFFSET,
+                +maxEmbedding0.toFixed(2) + LABELS_OFFSET,
+              ],
             },
             y: {
-              domain: [+minEmbedding1.toFixed(2) - 0.1, +maxEmbedding1.toFixed(2) + 0.1],
+              domain: [
+                +minEmbedding1.toFixed(2) - LABELS_OFFSET,
+                +maxEmbedding1.toFixed(2) + LABELS_OFFSET,
+              ],
             },
           },
           subjects: SUBJECTS.map((subject) => {
@@ -108,24 +114,22 @@ export function useData() {
             const yMax = Math.max(...yValues)
             return {
               x: {
-                domain: [+xMin.toFixed(2) - 0.1, +xMax.toFixed(2) + 0.1],
+                domain: [+xMin.toFixed(2) - LABELS_OFFSET, +xMax.toFixed(2) + LABELS_OFFSET],
               },
               y: {
-                domain: [+yMin.toFixed(2) - 0.1, +yMax.toFixed(2) + 0.1],
+                domain: [+yMin.toFixed(2) - LABELS_OFFSET, +yMax.toFixed(2) + LABELS_OFFSET],
               },
             }
           }),
         }
 
         const scatterData: ScatterData = {
-          // @ts-expect-error 类型检测错误，实际上已经包含了 ScatterData['all'] 的所有属性
           all: rawData.map((item) => ({
             ...item,
             a: item.embedding[0],
             b: item.embedding[1],
             embedding: undefined,
           })),
-          // @ts-expect-error 类型检测错误，实际上已经包含了 ScatterData['subjects'] 的所有属性
           subjects: SUBJECTS.map((subject) =>
             rawData
               .filter((item) => item['学科门类'] === subject)

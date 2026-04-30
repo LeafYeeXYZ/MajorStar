@@ -1,7 +1,7 @@
 import type { ClientData } from '../data/types.ts'
 // import Scatter from '@ant-design/plots/es/components/scatter'
 import { Modal, type TourProps, Skeleton } from 'antd'
-import { QuestionCircleOutlined, ReloadOutlined, DotChartOutlined } from '@ant-design/icons'
+import { QuestionCircleOutlined, DotChartOutlined, GiftOutlined } from '@ant-design/icons'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useData, SUBJECTS, type Subject } from './hooks/useData.tsx'
 import { Info } from './components/Info.tsx'
@@ -33,10 +33,31 @@ export default function App() {
 
   const [modal, contextHolder] = Modal.useModal()
   const openRef = useRef<boolean>(false)
+  const openModal = (data: Omit<ClientData, 'embedding'>) => {
+    if (openRef.current) return
+    modal.info({
+      centered: true,
+      icon: null,
+      title: null,
+      content: <Major clientData={data} />,
+      width: 920,
+      okText: '关闭',
+      okType: 'default',
+      onOk: () => {
+        openRef.current = false
+      },
+      onCancel: () => {
+        openRef.current = false
+      },
+      afterClose: () => {
+        openRef.current = false
+      },
+    })
+    openRef.current = true
+  }
 
   const [showLabels, setShowLabels] = useState<'显示' | '隐藏'>('显示')
   const [catagory, setCategory] = useState<string>('全部专业')
-  const [key, setKey] = useState<string>(crypto.randomUUID())
 
   const [scatterLoading, setScatterLoading] = useState<boolean>(true)
   const [scatterError, setScatterError] = useState<string | null>(null)
@@ -49,7 +70,6 @@ export default function App() {
         if (dataLoading || dataError) return
         setScatter(
           <Scatter
-            key={key}
             className="pt-12!"
             xField="a"
             yField="b"
@@ -102,7 +122,7 @@ export default function App() {
             }
             tooltip={{
               title: '专业名称',
-              items: ['专业代码', '学科门类', '专业类', '定义与本质'],
+              items: ['专业代码', '学科门类', '专业类', '简介'],
             }}
             data={
               catagory === '全部专业'
@@ -112,26 +132,7 @@ export default function App() {
             onEvent={(_, e) => {
               if (e.type === 'click' && e.data && e.data.data) {
                 const data = e.data.data as ClientData
-                if (openRef.current) return
-                modal.info({
-                  centered: true,
-                  icon: null,
-                  title: null,
-                  content: <Major clientData={data} />,
-                  width: 920,
-                  okText: '关闭',
-                  okType: 'default',
-                  onOk: () => {
-                    openRef.current = false
-                  },
-                  onCancel: () => {
-                    openRef.current = false
-                  },
-                  afterClose: () => {
-                    openRef.current = false
-                  },
-                })
-                openRef.current = true
+                openModal(data)
               }
             }}
             interaction={{
@@ -164,7 +165,7 @@ export default function App() {
                       const color = item.color ?? '#1677ff'
                       const showValue = value === '' ? '-' : value
 
-                      if (item.name === '定义与本质') {
+                      if (item.name === '简介') {
                         return `
                         <div class="mt-3 pt-3 border-t border-blue-950/20">
                           <div class="text-[13px] leading-[1.7] text-blue-950 line-clamp-4">${showValue}</div>
@@ -206,7 +207,7 @@ export default function App() {
         setScatterError(err instanceof Error ? err.message : '专业星云加载失败')
         setScatterLoading(false)
       })
-  }, [dataLoading, dataError, scatterConfig, scatterData, catagory, showLabels, key, modal])
+  }, [dataLoading, dataError, scatterConfig, scatterData, catagory, showLabels, modal])
 
   const loading = dataLoading || scatterLoading
   const error = dataError || scatterError
@@ -215,7 +216,7 @@ export default function App() {
   const helpRef = useRef<HTMLDivElement>(null)
   const catagoryRef = useRef<HTMLDivElement>(null)
   const showLabelsRef = useRef<HTMLDivElement>(null)
-  const reloadRef = useRef<HTMLDivElement>(null)
+  const randomRef = useRef<HTMLDivElement>(null)
   const steps: TourProps['steps'] = useMemo(() => {
     return [
       {
@@ -229,7 +230,8 @@ export default function App() {
       },
       {
         title: '专业相似度',
-        description: '在图中, 专业之间的距离表示它们的相似度. 距离越近, 相似度越高.',
+        description:
+          '在图中, 专业之间的距离表示它们的相似度. 距离越近, 相似度越高. 你可以用鼠标拖动星云左侧和底部的滑块来放大查看指定区域的内容.',
       },
       {
         title: '专业分类',
@@ -249,11 +251,11 @@ export default function App() {
       },
       {
         title: '专业详细描述',
-        description: '点击专业点, 可以加载该专业的详细描述 (加载时间取决于网络状况).',
+        description: '点击专业点, 可以加载该专业的详细描述.',
       },
       {
         title: '关于',
-        description: '点击左上角的"信息"按钮, 查看作者、开源地址、数据来源等信息.',
+        description: '点击左上角的"信息"按钮, 查看开源地址等信息.',
         target: () => infoRef.current!,
       },
       {
@@ -262,10 +264,9 @@ export default function App() {
         target: () => helpRef.current!,
       },
       {
-        title: '重置',
-        description:
-          '拖动星云左侧和底部的滑块可以显示指定区域的内容; 点击左上角的"重置"按钮, 可以重置星云.',
-        target: () => reloadRef.current!,
+        title: '随机专业',
+        description: '点击左上角的"礼物盒"按钮, 可以随机打开一个专业的详细介绍.',
+        target: () => randomRef.current!,
       },
       {
         title: '专业星云',
@@ -311,14 +312,17 @@ export default function App() {
               <QuestionCircleOutlined className="m-0!" />
             </Button>
           </div>
-          <div ref={reloadRef}>
+          <div ref={randomRef}>
             <Button
               onClick={() => {
-                setKey(crypto.randomUUID())
+                const allData = scatterData!.all
+                const randomIndex = Math.floor(Math.random() * allData.length)
+                const randomData = allData[randomIndex]
+                openModal(randomData)
               }}
               disabled={loading || !!error}
             >
-              <ReloadOutlined className="m-0!" />
+              <GiftOutlined className="m-0!" />
             </Button>
           </div>
         </div>

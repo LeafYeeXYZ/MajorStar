@@ -1,6 +1,7 @@
+# python data/scripts/gen_client_data.py
 import json
 import numpy as np
-import umap
+import umap # type: ignore
 from typing import TypedDict
 
 MAJOR_DATA_PATH = 'data/major_data.json'
@@ -11,7 +12,7 @@ class MajorData(TypedDict):
     专业类: str
     专业名称: str
     专业代码: str
-    定义与本质: str
+    简介: str
     知识结构: str
     学习方式: str
     适合人群: str
@@ -21,6 +22,7 @@ class MajorData(TypedDict):
     校际差异: str
     高中准备: str
     未来发展: str
+    人生价值: str
     embedding: list[float] # 1024 维向量
 
 class ClientData(TypedDict):
@@ -28,7 +30,7 @@ class ClientData(TypedDict):
     专业类: str
     专业名称: str
     专业代码: str
-    定义与本质: str
+    简介: str
     embedding: list[float] # 2 维向量
 
 reducer = umap.UMAP(
@@ -49,32 +51,45 @@ for item in original_data:
         '专业类': item['专业类'],
         '专业名称': item['专业名称'],
         '专业代码': item['专业代码'],
-        '定义与本质': item['定义与本质'],
+        '简介': item['简介'],
         'embedding': item['embedding'],
     })
 
-reduce_result = reducer.fit_transform(np.array([item['embedding'] for item in to_reduce_data]))
+print('开始降维...')
+reduce_result = reducer.fit_transform(np.array([item['embedding'] for item in to_reduce_data])) # type: ignore
 
 reduced_data: list[ClientData] = []
 
-for item, coord in zip(to_reduce_data, reduce_result):
+for item, coord in zip(to_reduce_data, reduce_result): # type: ignore
     reduced_data.append({
         '学科门类': item['学科门类'],
         '专业类': item['专业类'],
         '专业名称': item['专业名称'],
         '专业代码': item['专业代码'],
-        '定义与本质': item['定义与本质'],
-        'embedding': [float(coord[0]), float(coord[1])],
+        '简介': item['简介'],
+        'embedding': [float(coord[0]), float(coord[1])], # type: ignore
     })
 
+# 标准化
+print('开始标准化...')
 std1 = np.std([item['embedding'][0] for item in reduced_data])
 std2 = np.std([item['embedding'][1] for item in reduced_data])
 mean1 = np.mean([item['embedding'][0] for item in reduced_data])
 mean2 = np.mean([item['embedding'][1] for item in reduced_data])
-
 for item in reduced_data:
-    item['embedding'][0] = (item['embedding'][0] - mean1) / std1
-    item['embedding'][1] = (item['embedding'][1] - mean2) / std2
+    item['embedding'][0] = (item['embedding'][0] - mean1) / std1 # type: ignore
+    item['embedding'][1] = (item['embedding'][1] - mean2) / std2 # type: ignore
+
+# 缩放到[-9，9]范围内
+print('开始缩放...')
+min1 = min([item['embedding'][0] for item in reduced_data])
+max1 = max([item['embedding'][0] for item in reduced_data])
+min2 = min([item['embedding'][1] for item in reduced_data])
+max2 = max([item['embedding'][1] for item in reduced_data])
+for item in reduced_data:
+    item['embedding'][0] = (item['embedding'][0] - min1) / (max1 - min1) * 18 - 9
+    item['embedding'][1] = (item['embedding'][1] - min2) / (max2 - min2) * 18 - 9
 
 with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
     json.dump(reduced_data, f, ensure_ascii=False, indent=2)
+print(f'结果已保存到 {OUTPUT_PATH}')

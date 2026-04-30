@@ -22,7 +22,7 @@ function DetailSection({ title, className, children }: DetailSectionProps) {
 }
 
 type TitleSectionProps = {
-  clientData: ClientData
+  clientData: Omit<ClientData, 'embedding'>
   shortIntro: string
 }
 
@@ -47,7 +47,7 @@ function TitleSection({ clientData, shortIntro }: TitleSectionProps) {
 }
 
 type MajorProps = {
-  clientData: ClientData
+  clientData: Omit<ClientData, 'embedding'>
 }
 
 export function Major({ clientData }: MajorProps) {
@@ -112,29 +112,32 @@ export function Major({ clientData }: MajorProps) {
         </div>
       ) : data ? (
         <div className="space-y-5">
-          <TitleSection clientData={clientData} shortIntro={data['定义与本质']} />
+          <TitleSection clientData={clientData} shortIntro={data['简介']} />
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <DetailSection title="人生价值">{data['人生价值']}</DetailSection>
+            <DetailSection title="未来发展">{data['未来发展']}</DetailSection>
+          </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <DetailSection title="知识结构">{data['知识结构']}</DetailSection>
-            <DetailSection title="学习方式">{data['学习方式']}</DetailSection>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <DetailSection title="适合人群">{data['适合人群']}</DetailSection>
-            <DetailSection title="常见误解">{data['常见误解']}</DetailSection>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <DetailSection title="就业方向">{data['就业方向']}</DetailSection>
             <DetailSection title="竞争与门槛">{data['竞争与门槛']}</DetailSection>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <DetailSection title="校际差异">{data['校际差异']}</DetailSection>
-            <DetailSection title="高中准备">{data['高中准备']}</DetailSection>
+            <DetailSection title="常见误解">{data['常见误解']}</DetailSection>
+            <DetailSection title="就业方向">{data['就业方向']}</DetailSection>
           </div>
 
-          <DetailSection title="未来发展">{data['未来发展']}</DetailSection>
+          <div className="grid gap-4 md:grid-cols-2">
+            <DetailSection title="适合人群">{data['适合人群']}</DetailSection>
+            <DetailSection title="校际差异">{data['校际差异']}</DetailSection>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <DetailSection title="学习方式">{data['学习方式']}</DetailSection>
+            <DetailSection title="高中准备">{data['高中准备']}</DetailSection>
+          </div>
         </div>
       ) : null}
     </div>

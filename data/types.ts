@@ -10,7 +10,7 @@ export const RawDataSchema = z.object({
 export type RawData = z.infer<typeof RawDataSchema>
 
 export const MajorDataSchema = RawDataSchema.extend({
-  定义与本质: z.string(),
+  简介: z.string(),
   知识结构: z.string(),
   学习方式: z.string(),
   适合人群: z.string(),
@@ -20,6 +20,7 @@ export const MajorDataSchema = RawDataSchema.extend({
   校际差异: z.string(),
   高中准备: z.string(),
   未来发展: z.string(),
+  人生价值: z.string(),
   embedding: z.array(z.number()).length(1024),
 })
 
@@ -30,7 +31,7 @@ export const ServerDataSchema = MajorDataSchema.omit({ embedding: true })
 export type ServerData = z.infer<typeof ServerDataSchema>
 
 export const ClientDataSchema = RawDataSchema.extend({
-  定义与本质: z.string(),
+  简介: z.string(),
   embedding: z.array(z.number()).length(2),
 })
 
