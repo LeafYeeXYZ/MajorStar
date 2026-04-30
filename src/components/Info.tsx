@@ -1,16 +1,17 @@
-import { Button, Popover } from 'antd'
+import { Popover } from './Popover.tsx'
 import { InfoCircleOutlined } from '@ant-design/icons'
+import { Button } from './Button.tsx'
 
 export function Info() {
   return (
     <Popover
       content={
-        <div className="flex flex-col items-center gap-[0.3rem] font-semibold">
+        <div className="flex flex-col items-start gap-[0.3rem] font-semibold text-sm">
           <div>
-            开源地址(GitHub):{' '}
+            GitHub开源地址:{' '}
             <a
               href="https://github.com/LeafYeeXYZ/MajorStar"
-              className="text-blue-500 hover:underline"
+              className="text-blue-600 hover:underline"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -21,9 +22,10 @@ export function Info() {
           <div>专业描述来源: DeepSeek-V4-Pro生成, 仅供参考</div>
         </div>
       }
-      trigger={['hover', 'click']}
     >
-      <Button icon={<InfoCircleOutlined />} />
+      <Button>
+        <InfoCircleOutlined className="m-0!" />
+      </Button>
     </Popover>
   )
 }

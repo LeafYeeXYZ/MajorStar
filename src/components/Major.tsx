@@ -1,32 +1,56 @@
 import { useEffect, useState } from 'react'
 import { Skeleton } from 'antd'
+import { AlignLeftOutlined } from '@ant-design/icons'
 import { ServerDataSchema, type ClientData, type ServerData } from '../../data/types.ts'
 
-function DetailSection({
-  title,
-  accentClassName,
-  className,
-  children,
-}: {
+type DetailSectionProps = {
   title: string
-  accentClassName: string
   className?: string
   children: string
-}) {
+}
+
+function DetailSection({ title, className, children }: DetailSectionProps) {
   return (
-    <section
-      className={`overflow-hidden rounded-3xl border border-slate-200/70 bg-white/92 shadow-[0_14px_40px_rgba(15,23,42,0.08)] backdrop-blur-sm= ${className ?? ''}`}
-    >
-      <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
-        <span className={`h-2.5 w-2.5 rounded-full ${accentClassName}`} />
-        <div className="text-base font-semibold text-slate-900">{title}</div>
+    <section className={`overflow-hidden border border-blue-950 bg-blue-50 ${className ?? ''}`}>
+      <div className="flex items-center gap-3 border-b border-blue-950 px-4 py-3">
+        <span className={`h-2 w-2 border border-blue-950 bg-blue-200`} />
+        <div className="text-base font-semibold text-blue-950">{title}</div>
       </div>
-      <div className="text-balance px-5 pt-2 pb-3 text-[15px] leading-7 text-slate-700">{children}</div>
+      <div className="px-5 pt-2 pb-3 text-[14px] leading-7 text-blue-950">{children}</div>
     </section>
   )
 }
 
-export function Major({ clientData }: { clientData: ClientData }) {
+type TitleSectionProps = {
+  clientData: ClientData
+  shortIntro: string
+}
+
+function TitleSection({ clientData, shortIntro }: TitleSectionProps) {
+  return (
+    <section className="overflow-hidden border border-blue-950 p-5 bg-blue-50">
+      <div className="flex flex-col sm:flex-row justify-center sm:justify-between max-w-3xl gap-6 min-w-full">
+        <div className="font-semibold text-left text-blue-950">
+          <div className="mb-3 flex items-center gap-2.5">
+            <div className="inline-block text-2xl sm:text-3xl">{clientData['专业名称']}</div>
+            <div className="inline-block text-base pb-2.5">{clientData['专业代码']}</div>
+          </div>
+          <div className="text-sm leading-7 text-blue-950/80 pl-0.5">{shortIntro}</div>
+        </div>
+        <div className="flex flex-col justify-center gap-2 text-sm text-blue-950 font-semibold">
+          <div className="border border-blue-950 px-2 py-1.5 bg-blue-100 text-nowrap min-w-32 text-center">{`学科门类: ${clientData['学科门类']}`}</div>
+          <div className="border border-blue-950 px-2 py-1.5 bg-blue-100 text-nowrap min-w-32 text-center">{`专业类: ${clientData['专业类']}`}</div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+type MajorProps = {
+  clientData: ClientData
+}
+
+export function Major({ clientData }: MajorProps) {
   const [data, setData] = useState<ServerData | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
@@ -74,72 +98,43 @@ export function Major({ clientData }: { clientData: ClientData }) {
   }, [clientData['专业代码']])
 
   return (
-    <div className="space-y-5 text-balance text-slate-900">
+    <div className="space-y-5 text-blue-950">
       {loading ? (
-        <div className="overflow-hidden rounded-3xl p-5">
-          <Skeleton active paragraph={{ rows: 8 }} />
+        <div className="overflow-hidden w-full h-full p-5 flex items-center justify-center flex-col gap-4">
+          <Skeleton.Node active>
+            <AlignLeftOutlined className="text-5xl text-blue-950" />
+          </Skeleton.Node>
+          <div className="font-semibold text-blue-950">加载中</div>
         </div>
       ) : error ? (
-        <div className="overflow-hidden rounded-3xl p-5">
-          <div className="text-base font-semibold">数据加载失败</div>
-          <div className="mt-2 text-sm leading-7">{error}</div>
+        <div className="overflow-hidden w-full h-full p-5 flex items-center justify-center text-center">
+          <div className="text-blue-950 font-semibold">加载失败: {error}</div>
         </div>
       ) : data ? (
         <div className="space-y-5">
-          <section className="overflow-hidden rounded-3xl border border-black p-5 bg-blue-950">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-3xl">
-                <div className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl text-white flex items-center gap-4">
-                  {clientData['专业名称']}
-                  <div className="inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/70">
-                    {clientData['专业代码']} - {clientData['学科门类']} - {clientData['专业类']}
-                  </div>
-                </div>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80">{data['定义与本质']}</p>
-              </div>
-            </div>
-          </section>
+          <TitleSection clientData={clientData} shortIntro={data['定义与本质']} />
 
           <div className="grid gap-4 md:grid-cols-2">
-            <DetailSection title="知识结构" accentClassName="bg-indigo-500">
-              {data['知识结构']}
-            </DetailSection>
-            <DetailSection title="学习方式" accentClassName="bg-cyan-500">
-              {data['学习方式']}
-            </DetailSection>
+            <DetailSection title="知识结构">{data['知识结构']}</DetailSection>
+            <DetailSection title="学习方式">{data['学习方式']}</DetailSection>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <DetailSection title="适合人群" accentClassName="bg-emerald-500">
-              {data['适合人群']}
-            </DetailSection>
-            <DetailSection title="常见误解" accentClassName="bg-amber-500">
-              {data['常见误解']}
-            </DetailSection>
+            <DetailSection title="适合人群">{data['适合人群']}</DetailSection>
+            <DetailSection title="常见误解">{data['常见误解']}</DetailSection>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <DetailSection title="就业方向" accentClassName="bg-rose-500">
-              {data['就业方向']}
-            </DetailSection>
-            <DetailSection title="竞争与门槛" accentClassName="bg-violet-500">
-              {data['竞争与门槛']}
-            </DetailSection>
+            <DetailSection title="就业方向">{data['就业方向']}</DetailSection>
+            <DetailSection title="竞争与门槛">{data['竞争与门槛']}</DetailSection>
           </div>
-
 
           <div className="grid gap-4 md:grid-cols-2">
-            <DetailSection title="校际差异" accentClassName="bg-fuchsia-500">
-              {data['校际差异']}
-            </DetailSection>
-            <DetailSection title="高中准备" accentClassName="bg-orange-500">
-              {data['高中准备']}
-            </DetailSection>
+            <DetailSection title="校际差异">{data['校际差异']}</DetailSection>
+            <DetailSection title="高中准备">{data['高中准备']}</DetailSection>
           </div>
 
-          <DetailSection title="未来发展" accentClassName="bg-slate-500">
-            {data['未来发展']}
-          </DetailSection>
+          <DetailSection title="未来发展">{data['未来发展']}</DetailSection>
         </div>
       ) : null}
     </div>

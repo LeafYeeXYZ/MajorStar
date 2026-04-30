@@ -1,11 +1,14 @@
 import type { ClientData } from '../data/types.ts'
-import { Scatter, type ScatterConfig } from '@ant-design/plots'
-import { Button, Modal, Select, Tour, type TourProps } from 'antd'
-import { QuestionCircleOutlined, ReloadOutlined } from '@ant-design/icons'
+// import Scatter from '@ant-design/plots/es/components/scatter'
+import { Modal, type TourProps, Skeleton } from 'antd'
+import { QuestionCircleOutlined, ReloadOutlined, DotChartOutlined } from '@ant-design/icons'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CONFIG, DATA, SUBJECTS } from './data.ts'
+import { useData, SUBJECTS, type Subject } from './hooks/useData.tsx'
 import { Info } from './components/Info.tsx'
 import { Major } from './components/Major.tsx'
+import { Button } from './components/Button.tsx'
+import { Tour } from './components/Tour.tsx'
+import { Select } from './components/Select.tsx'
 
 function getIsTourPlayed(): boolean {
   const isPlayed = localStorage.getItem('isTourPlayed')
@@ -26,12 +29,188 @@ function escapeHtml(value: string): string {
 }
 
 export default function App() {
+  const { scatterConfig, scatterData, loading: dataLoading, error: dataError } = useData()
+
   const [modal, contextHolder] = Modal.useModal()
   const openRef = useRef<boolean>(false)
 
-  const [showLabels, setShowLabels] = useState<boolean>(true)
+  const [showLabels, setShowLabels] = useState<'显示' | '隐藏'>('显示')
   const [catagory, setCategory] = useState<string>('全部专业')
   const [key, setKey] = useState<string>(crypto.randomUUID())
+
+  const [scatterLoading, setScatterLoading] = useState<boolean>(true)
+  const [scatterError, setScatterError] = useState<string | null>(null)
+  const [scatter, setScatter] = useState<React.ReactNode | null>(null)
+  useEffect(() => {
+    if (dataLoading || dataError) return
+    setScatterLoading(true)
+    setScatterError(null)
+    import('@ant-design/plots/es/components/scatter')
+      .then(({ default: Scatter }) => {
+        setScatter(
+          <Scatter
+            key={key}
+            className="pt-12!"
+            xField="a"
+            yField="b"
+            colorField={catagory === '全部专业' ? '学科门类' : '专业类'}
+            shapeField="point"
+            slider={{
+              x: {
+                labelFormatter: (d: number) => d.toFixed(2),
+                showLabel: false,
+                style: {
+                  selectionFill: '#eff6ff',
+                  selectionFillOpacity: 1,
+                  selectionStroke: '#162456',
+                  handleIconRadius: 0,
+                  handleIconFill: '#eff6ff',
+                  handleIconStroke: '#162456',
+                  handleIconStrokeOpacity: 1,
+                },
+              },
+              y: {
+                labelFormatter: (d: number) => d.toFixed(2),
+                showLabel: false,
+                style: {
+                  selectionFill: '#eff6ff',
+                  selectionFillOpacity: 1,
+                  selectionStroke: '#162456',
+                  handleIconRadius: 0,
+                  handleIconFill: '#eff6ff',
+                  handleIconStroke: '#162456',
+                  handleIconStrokeOpacity: 1,
+                },
+              },
+            }}
+            scale={
+              catagory === '全部专业'
+                ? scatterConfig?.all
+                : scatterConfig?.subjects[SUBJECTS.indexOf(catagory as Subject)]
+            }
+            style={{ stroke: 'rgba(22,36,86,0.9)' }}
+            label={
+              showLabels == '显示'
+                ? [
+                    {
+                      text: '专业名称',
+                      style: { dy: -20 },
+                      transform: [{ type: 'overlapHide' }],
+                    },
+                  ]
+                : []
+            }
+            tooltip={{
+              title: '专业名称',
+              items: ['专业代码', '学科门类', '专业类', '定义与本质'],
+            }}
+            data={
+              catagory === '全部专业'
+                ? scatterData?.all
+                : scatterData?.subjects[SUBJECTS.indexOf(catagory as Subject)]
+            }
+            onEvent={(_, e) => {
+              if (e.type === 'click' && e.data && e.data.data) {
+                const data = e.data.data as ClientData
+                if (openRef.current) return
+                modal.info({
+                  centered: true,
+                  icon: null,
+                  title: null,
+                  content: <Major clientData={data} />,
+                  width: 920,
+                  okText: '关闭',
+                  okType: 'default',
+                  onOk: () => {
+                    openRef.current = false
+                  },
+                  onCancel: () => {
+                    openRef.current = false
+                  },
+                  afterClose: () => {
+                    openRef.current = false
+                  },
+                })
+                openRef.current = true
+              }
+            }}
+            interaction={{
+              // brushFilter: true, // 和滑动条冲突
+              tooltip: {
+                render: (
+                  _event: unknown,
+                  tooltipData: {
+                    title?: string
+                    items?: Array<{
+                      color?: string
+                      name?: string
+                      value?: string | number | null
+                    }>
+                  },
+                ) => {
+                  const { title, items } = tooltipData as {
+                    title?: string
+                    items?: Array<{
+                      color?: string
+                      name?: string
+                      value?: string | number | null
+                    }>
+                  }
+                  const safeTitle = escapeHtml(title ?? '')
+                  const safeItems = (items ?? [])
+                    .map((item) => {
+                      const name = escapeHtml(item.name ?? '')
+                      const value = escapeHtml(String(item.value ?? ''))
+                      const color = item.color ?? '#1677ff'
+                      const showValue = value === '' ? '-' : value
+
+                      if (item.name === '定义与本质') {
+                        return `
+                        <div class="mt-3 pt-3 border-t border-blue-950/20">
+                          <div class="text-[13px] leading-[1.7] text-blue-950 line-clamp-4">${showValue}</div>
+                        </div>
+                      `
+                      }
+
+                      return `
+                      <div class="flex items-center justify-between gap-4 py-1.5">
+                        <div class="flex items-center gap-2 min-w-0">
+                          <span class="w-2 h-2 rounded-full shrink-0" style="background: ${color};"></span>
+                          <span class="text-xs text-blue-950/70 shrink-0">${name}</span>
+                        </div>
+                        <div class="text-xs font-semibold text-blue-950 text-right truncate">${showValue}</div>
+                      </div>
+                    `
+                    })
+                    .join('')
+
+                  return `
+                  <div class="min-w-70 max-w-105 px-3 py-2.5 bg-blue-50 border border-blue-950 text-blue-950 shadow-md">
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                      <div class="min-w-0">
+                        <div class="text-[15px] font-bold leading-[1.4]">${safeTitle}</div>
+                        <div class="mt-1 text-xs text-blue-950/60">点击可查看详细描述</div>
+                      </div>
+                    </div>
+                    ${safeItems}
+                  </div>
+                `
+                },
+              },
+            }}
+          />,
+        )
+      })
+      .catch((err) => {
+        setScatterError(err instanceof Error ? err.message : '专业星云加载失败')
+      })
+      .finally(() => {
+        setScatterLoading(false)
+      })
+  }, [dataLoading, dataError, scatterConfig, scatterData, catagory, showLabels, key, modal])
+
+  const loading = dataLoading || scatterLoading
+  const error = dataError || scatterError
 
   const infoRef = useRef<HTMLDivElement>(null)
   const helpRef = useRef<HTMLDivElement>(null)
@@ -97,74 +276,11 @@ export default function App() {
   }, [])
   const [tourOpen, setTourOpen] = useState<boolean>(false)
   useEffect(() => {
+    if (loading || error) return
     if (!getIsTourPlayed()) {
       setTourOpen(true)
     }
-  }, [])
-
-  const scale: ScatterConfig['scale'] = useMemo(() => {
-    if (catagory === '全部专业') {
-      return CONFIG.all
-    }
-    return CONFIG.subjects[SUBJECTS.indexOf(catagory)]
-  }, [catagory])
-  const label: ScatterConfig['label'] = useMemo(() => {
-    return showLabels
-      ? [
-          {
-            text: '专业名称',
-            style: { dy: -20 },
-            transform: [{ type: 'overlapHide' }],
-          },
-        ]
-      : []
-  }, [showLabels])
-  const data: ScatterConfig['data'] = useMemo(() => {
-    if (catagory === '全部专业') {
-      return DATA.all
-    }
-    return DATA.subjects[SUBJECTS.indexOf(catagory)]
-  }, [catagory])
-
-  const onEvent: ScatterConfig['onEvent'] = (_, e) => {
-    if (e.type === 'click' && e.data && e.data.data) {
-      const data = e.data.data as ClientData
-      if (openRef.current) return
-      modal.info({
-        className:
-          'major-detail-modal overflow-hidden rounded-[28px] border border-slate-200/80 bg-transparent shadow-[0_30px_90px_rgba(15,23,42,0.22)] ' +
-          '[&_.ant-modal-content]:overflow-hidden [&_.ant-modal-content]:rounded-[28px] ' +
-          '[&_.ant-modal-content]:border [&_.ant-modal-content]:border-slate-200/80 ' +
-          '[&_.ant-modal-content]:bg-[linear-gradient(180deg,rgba(248,250,252,0.98)_0%,rgba(255,255,255,0.96)_100%)] ' +
-          '[&_.ant-modal-header]:mb-0 [&_.ant-modal-header]:border-b [&_.ant-modal-header]:border-slate-200/80 ' +
-          '[&_.ant-modal-header]:bg-[linear-gradient(135deg,rgba(241,245,249,0.94),rgba(255,255,255,0.94))] ' +
-          '[&_.ant-modal-body]:pt-0 [&_.ant-modal-footer]:border-t [&_.ant-modal-footer]:border-slate-200/80 ' +
-          '[&_.ant-modal-footer]:bg-[rgba(248,250,252,0.78)]',
-        centered: true,
-        icon: null,
-        title: null,
-        content: <Major clientData={data} />,
-        width: 920,
-        okText: '关闭',
-        okType: 'default',
-        onOk: () => {
-          openRef.current = false
-        },
-        onCancel: () => {
-          openRef.current = false
-        },
-        afterClose: () => {
-          openRef.current = false
-        },
-      })
-      openRef.current = true
-    }
-  }
-
-  const tooltip: ScatterConfig['tooltip'] = {
-    title: '专业名称',
-    items: ['专业代码', '学科门类', '专业类', '定义与本质'],
-  }
+  }, [loading, error])
 
   return (
     <div className="relative w-dvw h-dvh overflow-hidden">
@@ -181,31 +297,34 @@ export default function App() {
         }}
       />
       <header className="absolute top-0 left-0 w-full h-12 flex flex-row items-center z-10 px-4 pt-2 justify-between gap-4">
-        <div className="flex items-center font-semibold gap-2">
-          <div className="mr-0 lg:mr-2 text-nowrap text-2xl">专业星云</div>
+        <div className="flex items-center font-semibold gap-3">
+          <div className="mr-0 lg:mr-2 text-nowrap text-2xl text-blue-950">专业星云</div>
           <div ref={infoRef}>
             <Info />
           </div>
           <div ref={helpRef}>
             <Button
-              icon={<QuestionCircleOutlined />}
               onClick={() => {
                 setTourOpen(true)
               }}
-            />
+              disabled={loading || !!error}
+            >
+              <QuestionCircleOutlined className="m-0!" />
+            </Button>
           </div>
           <div ref={reloadRef}>
             <Button
-              icon={<ReloadOutlined />}
               onClick={() => {
                 setKey(crypto.randomUUID())
               }}
-            />
+              disabled={loading || !!error}
+            >
+              <ReloadOutlined className="m-0!" />
+            </Button>
           </div>
         </div>
         <div className="flex flex-row items-center gap-4 font-semibold flex-nowrap text-sm overflow-auto">
-          <div className="flex items-center gap-2 justify-start w-max" ref={catagoryRef}>
-            <div className="text-nowrap">学科门类:</div>
+          <div className="flex items-center w-max" ref={catagoryRef}>
             <Select
               className="w-26!"
               value={catagory}
@@ -215,108 +334,44 @@ export default function App() {
               options={[
                 { label: '全部专业', value: '全部专业' },
                 ...SUBJECTS.map((subject) => ({
-                  label: subject,
+                  label: `仅${subject}`,
                   value: subject,
                 })),
               ]}
+              disabled={loading || !!error}
             />
           </div>
-          <div className="flex items-center gap-2 justify-start w-max" ref={showLabelsRef}>
-            <div className="text-nowrap">专业名称标签:</div>
+          <div className="flex items-center w-max" ref={showLabelsRef}>
             <Select
-              className="w-18!"
+              className="w-26!"
               value={showLabels}
               onChange={(value) => {
                 setShowLabels(value)
               }}
               options={[
-                { label: '显示', value: true },
-                { label: '隐藏', value: false },
+                { label: '显示标签', value: '显示' },
+                { label: '隐藏标签', value: '隐藏' },
               ]}
+              disabled={loading || !!error}
             />
           </div>
         </div>
       </header>
       <section className="w-full h-full">
-        <Scatter
-          key={key}
-          className="pt-12!"
-          xField="a"
-          yField="b"
-          colorField={catagory === '全部专业' ? '学科门类' : '专业类'}
-          shapeField="point"
-          scale={scale}
-          style={{ stroke: 'rgba(50,0,0,0.7)' }}
-          label={label}
-          tooltip={tooltip}
-          data={data}
-          onEvent={onEvent}
-          interaction={{
-            brushFilter: true,
-            tooltip: {
-              render: (
-                _event: unknown,
-                tooltipData: {
-                  title?: string
-                  items?: Array<{
-                    color?: string
-                    name?: string
-                    value?: string | number | null
-                  }>
-                },
-              ) => {
-                const { title, items } = tooltipData as {
-                  title?: string
-                  items?: Array<{
-                    color?: string
-                    name?: string
-                    value?: string | number | null
-                  }>
-                }
-                const safeTitle = escapeHtml(title ?? '')
-                const safeItems = (items ?? [])
-                  .map((item) => {
-                    const name = escapeHtml(item.name ?? '')
-                    const value = escapeHtml(String(item.value ?? ''))
-                    const color = item.color ?? '#1677ff'
-                    const showValue = value === '' ? '-' : value
-
-                    if (item.name === '定义与本质') {
-                      return `
-                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(5, 5, 5, 0.08);">
-                          <div style="font-size: 12px; line-height: 1.4; color: rgba(0, 0, 0, 0.56); margin-bottom: 8px;">简介</div>
-                          <div style="font-size: 13px; line-height: 1.7; color: rgba(0, 0, 0, 0.88); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; white-space: normal;">${showValue}</div>
-                        </div>
-                      `
-                    }
-
-                    return `
-                      <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 0;">
-                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                          <span style="width: 8px; height: 8px; border-radius: 999px; background: ${color}; flex: 0 0 auto;"></span>
-                          <span style="font-size: 12px; color: rgba(0, 0, 0, 0.56); flex: 0 0 auto;">${name}</span>
-                        </div>
-                        <div style="font-size: 12px; font-weight: 600; color: rgba(0, 0, 0, 0.88); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${showValue}</div>
-                      </div>
-                    `
-                  })
-                  .join('')
-
-                return `
-                  <div style="min-width: 280px; max-width: 420px; padding: 14px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.98); box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16); border: 1px solid rgba(15, 23, 42, 0.08);">
-                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px;">
-                      <div style="min-width: 0;">
-                        <div style="font-size: 15px; font-weight: 700; line-height: 1.4; color: rgba(0, 0, 0, 0.92);">${safeTitle}</div>
-                        <div style="margin-top: 4px; font-size: 12px; color: rgba(0, 0, 0, 0.45);">点击可查看详细描述</div>
-                      </div>
-                    </div>
-                    ${safeItems}
-                  </div>
-                `
-              },
-            },
-          }}
-        />
+        {loading ? (
+          <div className="overflow-hidden w-full h-full p-5 flex items-center justify-center flex-col gap-4">
+            <Skeleton.Node active>
+              <DotChartOutlined className="text-5xl text-blue-950" />
+            </Skeleton.Node>
+            <div className="font-semibold text-blue-950">加载中</div>
+          </div>
+        ) : error ? (
+          <div className="overflow-hidden w-full h-full p-5 flex items-center justify-center">
+            <div className="text-blue-950 font-semibold">加载失败: {error}</div>
+          </div>
+        ) : (
+          <>{scatter}</>
+        )}
       </section>
     </div>
   )

@@ -4,7 +4,7 @@ import umap
 from typing import TypedDict
 
 MAJOR_DATA_PATH = 'data/major_data.json'
-OUTPUT_PATH = 'src/data.json'
+OUTPUT_PATH = 'public/data.json'
 
 class MajorData(TypedDict):
     学科门类: str
