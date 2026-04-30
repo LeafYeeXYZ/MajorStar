@@ -42,11 +42,11 @@ export default function App() {
   const [scatterError, setScatterError] = useState<string | null>(null)
   const [scatter, setScatter] = useState<React.ReactNode | null>(null)
   useEffect(() => {
-    if (dataLoading || dataError) return
     setScatterLoading(true)
     setScatterError(null)
     import('@ant-design/plots/es/components/scatter')
       .then(({ default: Scatter }) => {
+        if (dataLoading || dataError) return
         setScatter(
           <Scatter
             key={key}
@@ -200,11 +200,10 @@ export default function App() {
             }}
           />,
         )
+        setScatterLoading(false)
       })
       .catch((err) => {
         setScatterError(err instanceof Error ? err.message : '专业星云加载失败')
-      })
-      .finally(() => {
         setScatterLoading(false)
       })
   }, [dataLoading, dataError, scatterConfig, scatterData, catagory, showLabels, key, modal])
