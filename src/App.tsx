@@ -264,7 +264,7 @@ export default function App() {
       {
         title: '重置',
         description:
-          '在星云中框选可以显示指定区域的内容; 双击鼠标, 或点击左上角的"重置"按钮, 可以重置视图.',
+          '拖动星云左侧和底部的滑块可以显示指定区域的内容; 点击左上角的"重置"按钮, 可以重置星云.',
         target: () => reloadRef.current!,
       },
       {
