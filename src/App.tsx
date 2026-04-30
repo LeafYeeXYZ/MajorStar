@@ -278,6 +278,7 @@ export default function App() {
     if (loading || error) return
     if (!getIsTourPlayed()) {
       setTourOpen(true)
+      setIsTourPlayed(true)
     }
   }, [loading, error])
 
@@ -292,7 +293,6 @@ export default function App() {
         }}
         onFinish={() => {
           setTourOpen(false)
-          setIsTourPlayed(true)
         }}
       />
       <header className="absolute top-0 left-0 w-full h-12 flex flex-row items-center z-10 px-4 pt-2 justify-between gap-4">
