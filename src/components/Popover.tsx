@@ -20,19 +20,27 @@ export function Popover({ children, content, className }: PopoverProps) {
     if (visible && targetRef.current && popoverRef.current) {
       const targetRect = targetRef.current.getBoundingClientRect()
       const popoverRect = popoverRef.current.getBoundingClientRect()
+      const MARGIN = 8
+      const maxLeft = window.innerWidth - popoverRect.width - MARGIN
+      const maxTop = window.innerHeight - popoverRect.height - MARGIN
+
       // 默认位置：目标元素上方居中
-      let top = targetRect.top - popoverRect.height - 8
+      let top = targetRect.top - popoverRect.height - MARGIN
       let left = targetRect.left + targetRect.width / 2 - popoverRect.width / 2
-      // 边界检测：上方空间不足时，自动翻转到下方
-      if (top < 8) {
-        top = targetRect.bottom + 8
+
+      // 边界检测：上方空间不足时，尝试翻转到下方
+      if (top < MARGIN) {
+        const bottomTop = targetRect.bottom + MARGIN
+        top = bottomTop > maxTop ? MARGIN : bottomTop
       }
-      // 边界检测：防止左右溢出屏幕
-      if (left < 8) {
-        left = 8
-      } else if (left + popoverRect.width > window.innerWidth - 8) {
-        left = window.innerWidth - popoverRect.width - 8
+
+      // 水平边界检测：始终保证左、右边距至少为 MARGIN
+      if (left < MARGIN) {
+        left = MARGIN
+      } else if (left > maxLeft) {
+        left = maxLeft
       }
+
       setCoords({ top, left })
     }
   }, [visible, content])
@@ -67,7 +75,7 @@ export function Popover({ children, content, className }: PopoverProps) {
         createPortal(
           <div
             ref={popoverRef}
-            className={`fixed z-50 border border-blue-950 bg-blue-50 text-blue-950 px-3 py-2 shadow-md transition duration-150 ease-in-out ${animate ? 'opacity-100 scale-100' : 'opacity-0 scale-95'} ${className || ''}`}
+            className={`fixed z-50 border border-blue-950 bg-blue-50 text-blue-950 shadow-md transition duration-100 ease-in-out ${animate ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'} ${className || ''}`}
             style={{ top: coords.top, left: coords.left }}
           >
             {content}

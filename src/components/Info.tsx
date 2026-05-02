@@ -6,7 +6,7 @@ export function Info() {
   return (
     <Popover
       content={
-        <div className="flex flex-col items-start gap-[0.3rem] font-semibold text-[0.8rem]">
+        <div className="flex flex-col items-start gap-[0.3rem] font-semibold text-[0.8rem] px-3 py-2">
           <div>
             GitHub开源地址:{' '}
             <a
@@ -23,7 +23,7 @@ export function Info() {
         </div>
       }
     >
-      <Button>
+      <Button className="h-9 w-9 flex items-center justify-center">
         <InfoCircleOutlined className="m-0!" />
       </Button>
     </Popover>

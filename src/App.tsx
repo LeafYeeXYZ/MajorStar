@@ -1,5 +1,4 @@
 import type { ClientData } from '../data/types.ts'
-// import Scatter from '@ant-design/plots/es/components/scatter'
 import { Modal, type TourProps, Skeleton } from 'antd'
 import { QuestionCircleOutlined, DotChartOutlined, GiftOutlined } from '@ant-design/icons'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -9,6 +8,7 @@ import { Major } from './components/Major.tsx'
 import { Button } from './components/Button.tsx'
 import { Tour } from './components/Tour.tsx'
 import { Select } from './components/Select.tsx'
+import { Search } from './components/Search.tsx'
 
 function getIsTourPlayed(): boolean {
   const isPlayed = localStorage.getItem('isTourPlayed')
@@ -30,6 +30,7 @@ function escapeHtml(value: string): string {
 
 export default function App() {
   const { scatterConfig, scatterData, loading: dataLoading, error: dataError } = useData()
+  const [catagory, setCategory] = useState<string>('全部专业')
 
   const [modal, contextHolder] = Modal.useModal()
   const openRef = useRef<boolean>(false)
@@ -55,9 +56,6 @@ export default function App() {
     })
     openRef.current = true
   }
-
-  const [showLabels, setShowLabels] = useState<'显示' | '隐藏'>('显示')
-  const [catagory, setCategory] = useState<string>('全部专业')
 
   const [scatterLoading, setScatterLoading] = useState<boolean>(true)
   const [scatterError, setScatterError] = useState<string | null>(null)
@@ -109,17 +107,13 @@ export default function App() {
                 : scatterConfig?.subjects[SUBJECTS.indexOf(catagory as Subject)]
             }
             style={{ stroke: 'rgba(22,36,86,0.9)' }}
-            label={
-              showLabels == '显示'
-                ? [
-                    {
-                      text: '专业名称',
-                      style: { dy: -20 },
-                      transform: [{ type: 'overlapHide' }],
-                    },
-                  ]
-                : []
-            }
+            label={[
+              {
+                text: '专业名称',
+                style: { dy: -20 },
+                transform: [{ type: 'overlapHide' }],
+              },
+            ]}
             tooltip={{
               title: '专业名称',
               items: ['专业代码', '学科门类', '专业类', '简介'],
@@ -207,7 +201,7 @@ export default function App() {
         setScatterError(err instanceof Error ? err.message : '专业星云加载失败')
         setScatterLoading(false)
       })
-  }, [dataLoading, dataError, scatterConfig, scatterData, catagory, showLabels, modal])
+  }, [dataLoading, dataError, scatterConfig, scatterData, catagory, modal])
 
   const loading = dataLoading || scatterLoading
   const error = dataError || scatterError
@@ -215,7 +209,7 @@ export default function App() {
   const infoRef = useRef<HTMLDivElement>(null)
   const helpRef = useRef<HTMLDivElement>(null)
   const catagoryRef = useRef<HTMLDivElement>(null)
-  const showLabelsRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLDivElement>(null)
   const randomRef = useRef<HTMLDivElement>(null)
   const steps: TourProps['steps'] = useMemo(() => {
     return [
@@ -240,9 +234,10 @@ export default function App() {
         target: () => catagoryRef.current!,
       },
       {
-        title: '专业名称标签',
-        description: '你可以在这里选择是否在专业星云中显示专业名称标签.',
-        target: () => showLabelsRef.current!,
+        title: '搜索专业',
+        description:
+          '你可以在这里搜索专业名称、专业代码、学科门类、专业类等信息, 点击搜索结果可以查看该专业的详细介绍.',
+        target: () => searchRef.current!,
       },
       {
         title: '专业基本信息',
@@ -296,7 +291,7 @@ export default function App() {
           setTourOpen(false)
         }}
       />
-      <header className="absolute top-0 left-0 w-full h-12 flex flex-row items-center z-10 px-4 pt-2 justify-between gap-4">
+      <header className="absolute top-0 left-0 w-full h-12 flex flex-row items-center z-10 pl-4 pr-3 pt-2 justify-between gap-4">
         <div className="flex items-center font-semibold gap-3">
           <div className="mr-0 lg:mr-2 text-nowrap text-2xl text-blue-950">专业星云</div>
           <div ref={infoRef}>
@@ -308,6 +303,7 @@ export default function App() {
                 setTourOpen(true)
               }}
               disabled={loading || !!error}
+              className="h-9 w-9 flex items-center justify-center"
             >
               <QuestionCircleOutlined className="m-0!" />
             </Button>
@@ -321,12 +317,13 @@ export default function App() {
                 openModal(randomData)
               }}
               disabled={loading || !!error}
+              className="h-9 w-9 flex items-center justify-center"
             >
               <GiftOutlined className="m-0!" />
             </Button>
           </div>
         </div>
-        <div className="flex flex-row items-center gap-4 font-semibold flex-nowrap text-sm overflow-auto">
+        <div className="flex flex-row items-center gap-3 font-semibold flex-nowrap text-sm overflow-auto">
           <div className="flex items-center w-max" ref={catagoryRef}>
             <Select
               className="w-26!"
@@ -344,17 +341,10 @@ export default function App() {
               disabled={loading || !!error}
             />
           </div>
-          <div className="flex items-center w-max" ref={showLabelsRef}>
-            <Select
-              className="w-26!"
-              value={showLabels}
-              onChange={(value) => {
-                setShowLabels(value)
-              }}
-              options={[
-                { label: '显示标签', value: '显示' },
-                { label: '隐藏标签', value: '隐藏' },
-              ]}
+          <div ref={searchRef}>
+            <Search
+              data={scatterData?.all ?? []}
+              onClick={(data) => openModal(data)}
               disabled={loading || !!error}
             />
           </div>
