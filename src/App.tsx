@@ -235,8 +235,7 @@ export default function App() {
       },
       {
         title: '搜索专业',
-        description:
-          '你可以在这里搜索专业名称、专业代码、学科门类、专业类等信息, 点击搜索结果可以查看该专业的详细介绍.',
+        description: '你可以在这里搜索专业名称或专业代码, 点击搜索结果可以查看该专业的详细介绍.',
         target: () => searchRef.current!,
       },
       {
