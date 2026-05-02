@@ -35,11 +35,11 @@ type ScatterConfig = {
 }
 
 type ScatterData = {
-  all: (Omit<ClientData, 'embedding'> & {
+  all: (ClientData & {
     a: number
     b: number
   })[]
-  subjects: (Omit<ClientData, 'embedding'> & {
+  subjects: (ClientData & {
     a: number
     b: number
   })[][]
@@ -128,7 +128,6 @@ export function useData() {
             ...item,
             a: item.embedding[0],
             b: item.embedding[1],
-            embedding: undefined,
           })),
           subjects: SUBJECTS.map((subject) =>
             rawData
@@ -137,7 +136,6 @@ export function useData() {
                 ...item,
                 a: item.embedding[0],
                 b: item.embedding[1],
-                embedding: undefined,
               })),
           ),
         }

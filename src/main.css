@@ -11,7 +11,7 @@ html {
 
 /* 优化 antd 的 Modal 样式 */
 .ant-modal-container {
-  @apply rounded-none! border border-blue-950! m-4;
+  @apply rounded-none! border border-blue-950! m-3!;
 }
 .ant-modal-content {
   @apply rounded-none! border border-blue-950! bg-blue-50! overflow-hidden!;

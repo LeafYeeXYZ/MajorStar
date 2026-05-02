@@ -6,8 +6,8 @@ import { Input } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
 type SearchProps = {
-  data: Omit<ClientData, 'embedding'>[]
-  onClick: (data: Omit<ClientData, 'embedding'>) => void
+  data: ClientData[]
+  onClick: (data: ClientData) => void
   disabled?: boolean
 }
 

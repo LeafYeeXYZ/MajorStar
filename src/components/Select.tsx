@@ -31,7 +31,7 @@ export function Select({ options, value, onChange, className, disabled }: Select
         options={options}
         value={value}
         onChange={onChange}
-        className={`py-1.5! disabled:filter disabled:grayscale ${className || ''}`}
+        className={`disabled:filter disabled:grayscale ${className || ''}`}
         disabled={disabled}
       />
     </ConfigProvider>

@@ -5,55 +5,105 @@ import { ServerDataSchema, type ClientData, type ServerData } from '../../data/t
 
 type DetailSectionProps = {
   title: string
-  className?: string
   children: string
 }
 
-function DetailSection({ title, className, children }: DetailSectionProps) {
+function DetailSection({ title, children }: DetailSectionProps) {
   return (
-    <section className={`overflow-hidden border border-blue-950 bg-blue-50 ${className ?? ''}`}>
-      <div className="flex items-center gap-3 border-b border-blue-950 px-4 py-3">
+    <section className={`overflow-hidden border border-blue-950`}>
+      <div className="flex items-center gap-3 border-b border-blue-950 px-3 py-2 bg-blue-50">
         <span className={`h-2 w-2 border border-blue-950 bg-blue-200`} />
         <div className="text-base font-semibold text-blue-950">{title}</div>
       </div>
-      <div className="px-5 pt-2 pb-3 text-[14px] leading-7 text-blue-950">{children}</div>
+      <div className="px-3.5 py-2 text-sm leading-6 text-blue-950 bg-white">{children}</div>
     </section>
   )
 }
 
 type TitleSectionProps = {
-  clientData: Omit<ClientData, 'embedding'>
+  clientData: ClientData
   shortIntro: string
 }
 
 function TitleSection({ clientData, shortIntro }: TitleSectionProps) {
   return (
-    <section className="overflow-hidden border border-blue-950 p-5 bg-blue-50">
-      <div className="flex flex-col sm:flex-row justify-center sm:justify-between max-w-3xl gap-6 min-w-full">
-        <div className="font-semibold text-left text-blue-950">
-          <div className="mb-3 flex items-center gap-2.5">
-            <div className="inline-block text-2xl sm:text-3xl">{clientData['专业名称']}</div>
-            <div className="inline-block text-base pb-2.5">{clientData['专业代码']}</div>
+    <section className="overflow-hidden">
+      <div className="flex flex-col max-w-3xl min-w-full">
+        <div className="pt-2 pb-5 mb-3 flex items-start justify-between gap-2.5 border-blue-950 border-b-2 border-dashed">
+          <div className="text-3xl sm:text-4xl">{clientData['专业名称']}</div>
+          <div className="flex items-center gap-2 font-semibold text-sm flex-wrap justify-end">
+            <div>{clientData['专业代码']}</div>
+            <div>
+              {clientData['学科门类']}-{clientData['专业类']}
+            </div>
           </div>
-          <div className="text-sm leading-7 text-blue-950/80 pl-0.5">{shortIntro}</div>
         </div>
-        <div className="flex flex-col justify-center gap-2 text-sm text-blue-950 font-semibold">
-          <div className="border border-blue-950 px-2 py-1.5 bg-blue-100 text-nowrap min-w-32 text-center">{`学科门类: ${clientData['学科门类']}`}</div>
-          <div className="border border-blue-950 px-2 py-1.5 bg-blue-100 text-nowrap min-w-32 text-center">{`专业类: ${clientData['专业类']}`}</div>
-        </div>
+        <div className="text-sm font-semibold text-blue-950/90 pl-0.5 leading-6">{shortIntro}</div>
       </div>
     </section>
   )
 }
 
-type MajorProps = {
-  clientData: Omit<ClientData, 'embedding'>
+type SimilarMajorsSectionProps = {
+  majors: (ClientData & { similarity: number })[]
+  onClick: (data: ClientData) => void
 }
 
-export function Major({ clientData }: MajorProps) {
+function SimilarMajorsSection({ majors, onClick }: SimilarMajorsSectionProps) {
+  return (
+    <section className={`overflow-hidden border border-blue-950 bg-blue-50`}>
+      <div className="flex items-center gap-3 border-b border-blue-950 px-3 py-2">
+        <span className={`h-2 w-2 border border-blue-950 bg-blue-200`} />
+        <div className="text-base font-semibold text-blue-950">相似专业</div>
+      </div>
+      <div className="p-3 text-blue-950 bg-white">
+        <ul className="flex flex-row flex-wrap gap-3 items-center justify-between">
+          {majors.map((item) => (
+            <li
+              key={item['专业代码']}
+              onClick={() => onClick(item)}
+              className="cursor-pointer hover:bg-blue-100/60 px-2.5 pt-1.5 pb-2 border border-blue-950 w-[calc(50%-0.375rem)] md:w-[calc(33.33%-0.5rem)] bg-blue-50/30"
+            >
+              <div className="flex items-center justify-between flex-wrap">
+                <div className="font-semibold text-sm text-blue-950">{item['专业名称']}</div>
+                <div className="font-semibold text-sm text-blue-950">{item['专业代码']}</div>
+              </div>
+              <div className="font-semibold text-xs text-blue-950/80 mt-0.5">{`相似度 ${(item.similarity * 100).toFixed(2)}%`}</div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
+function calcSimilarity(target: ClientData, other: ClientData): number {
+  const targetVec = target.embedding as [number, number]
+  const otherVec = other.embedding as [number, number]
+  const distance = Math.sqrt((targetVec[0] - otherVec[0]) ** 2 + (targetVec[1] - otherVec[1]) ** 2)
+  return 1 / (1 + distance)
+}
+
+const SIMILAR_MAJORS_COUNT = 6
+
+type MajorProps = {
+  targetData: ClientData
+  allData: ClientData[]
+  openModal: (data: ClientData) => void
+}
+
+export function Major({ targetData, allData, openModal }: MajorProps) {
   const [data, setData] = useState<ServerData | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  const similarMajors = allData
+    .filter((item) => item['专业代码'] !== targetData['专业代码'])
+    .map((item) => ({
+      ...item,
+      similarity: calcSimilarity(targetData, item),
+    }))
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, SIMILAR_MAJORS_COUNT)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -64,7 +114,7 @@ export function Major({ clientData }: MajorProps) {
       setData(null)
 
       try {
-        const response = await fetch(`/data/${clientData['专业代码']}.json`, {
+        const response = await fetch(`/data/${targetData['专业代码']}.json`, {
           signal: controller.signal,
         })
 
@@ -95,10 +145,10 @@ export function Major({ clientData }: MajorProps) {
     return () => {
       controller.abort()
     }
-  }, [clientData['专业代码']])
+  }, [targetData['专业代码']])
 
   return (
-    <div className="space-y-5 text-blue-950">
+    <div className="text-blue-950">
       {loading ? (
         <div className="overflow-hidden w-full h-full p-5 flex items-center justify-center flex-col gap-4">
           <Skeleton.Node active>
@@ -111,8 +161,10 @@ export function Major({ clientData }: MajorProps) {
           <div className="text-blue-950 font-semibold">加载失败: {error}</div>
         </div>
       ) : data ? (
-        <div className="space-y-5">
-          <TitleSection clientData={clientData} shortIntro={data['简介']} />
+        <div className="space-y-4">
+          <TitleSection clientData={targetData} shortIntro={data['简介']} />
+
+          <SimilarMajorsSection majors={similarMajors} onClick={openModal} />
 
           <div className="grid gap-4 md:grid-cols-2">
             <DetailSection title="人生价值">{data['人生价值']}</DetailSection>

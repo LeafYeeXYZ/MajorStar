@@ -34,13 +34,27 @@ export default function App() {
 
   const [modal, contextHolder] = Modal.useModal()
   const openRef = useRef<boolean>(false)
-  const openModal = (data: Omit<ClientData, 'embedding'>) => {
+  const openModal = (data: ClientData) => {
     if (openRef.current) return
     modal.info({
       centered: true,
       icon: null,
       title: null,
-      content: <Major clientData={data} />,
+      content: (
+        <Major
+          targetData={data}
+          allData={scatterData?.all || []}
+          openModal={(data) => {
+            const closeBtn = document.querySelector(
+              '.ant-modal-confirm-btns .ant-btn',
+            ) as HTMLButtonElement | null
+            if (closeBtn) {
+              closeBtn.click()
+            }
+            openModal(data)
+          }}
+        />
+      ),
       width: 920,
       okText: '关闭',
       okType: 'default',
@@ -325,7 +339,7 @@ export default function App() {
         <div className="flex flex-row items-center gap-3 font-semibold flex-nowrap text-sm overflow-auto">
           <div className="flex items-center w-max" ref={catagoryRef}>
             <Select
-              className="w-26!"
+              className="w-26! h-9!"
               value={catagory}
               onChange={(value) => {
                 setCategory(value)
