@@ -167,29 +167,16 @@ export function Major({ targetData, allData, openModal }: MajorProps) {
           <SimilarMajorsSection majors={similarMajors} onClick={openModal} />
 
           <div className="grid gap-4 md:grid-cols-2">
-            <DetailSection title="人生价值">{data['人生价值']}</DetailSection>
-            <DetailSection title="未来发展">{data['未来发展']}</DetailSection>
+            <DetailSection title="知识结构与学习方式">{data['知识结构与学习方式']}</DetailSection>
+            <DetailSection title="人格特质与能力要求">{data['人格特质与能力要求']}</DetailSection>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <DetailSection title="知识结构">{data['知识结构']}</DetailSection>
-            <DetailSection title="竞争与门槛">{data['竞争与门槛']}</DetailSection>
+            <DetailSection title="就业方向与竞争门槛">{data['就业方向与竞争门槛']}</DetailSection>
+            <DetailSection title="未来发展与常见误解">{data['未来发展与常见误解']}</DetailSection>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <DetailSection title="常见误解">{data['常见误解']}</DetailSection>
-            <DetailSection title="就业方向">{data['就业方向']}</DetailSection>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <DetailSection title="适合人群">{data['适合人群']}</DetailSection>
-            <DetailSection title="校际差异">{data['校际差异']}</DetailSection>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <DetailSection title="学习方式">{data['学习方式']}</DetailSection>
-            <DetailSection title="高中准备">{data['高中准备']}</DetailSection>
-          </div>
+          <DetailSection title="人生状态与自我实现">{data['人生状态与自我实现']}</DetailSection>
         </div>
       ) : null}
     </div>

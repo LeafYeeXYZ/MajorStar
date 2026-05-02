@@ -11,16 +11,11 @@ export type RawData = z.infer<typeof RawDataSchema>
 
 export const MajorDataSchema = RawDataSchema.extend({
   简介: z.string(),
-  知识结构: z.string(),
-  学习方式: z.string(),
-  适合人群: z.string(),
-  常见误解: z.string(),
-  就业方向: z.string(),
-  竞争与门槛: z.string(),
-  校际差异: z.string(),
-  高中准备: z.string(),
-  未来发展: z.string(),
-  人生价值: z.string(),
+  知识结构与学习方式: z.string(),
+  人格特质与能力要求: z.string(),
+  就业方向与竞争门槛: z.string(),
+  未来发展与常见误解: z.string(),
+  人生状态与自我实现: z.string(),
   embedding: z.array(z.number()).length(1024),
 })
 

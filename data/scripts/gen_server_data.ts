@@ -14,16 +14,11 @@ if (import.meta.main) {
       专业名称: item.专业名称,
       专业代码: item.专业代码,
       简介: item.简介,
-      知识结构: item.知识结构,
-      学习方式: item.学习方式,
-      适合人群: item.适合人群,
-      常见误解: item.常见误解,
-      就业方向: item.就业方向,
-      竞争与门槛: item.竞争与门槛,
-      校际差异: item.校际差异,
-      高中准备: item.高中准备,
-      未来发展: item.未来发展,
-      人生价值: item.人生价值,
+      知识结构与学习方式: item.知识结构与学习方式,
+      人格特质与能力要求: item.人格特质与能力要求,
+      就业方向与竞争门槛: item.就业方向与竞争门槛,
+      未来发展与常见误解: item.未来发展与常见误解,
+      人生状态与自我实现: item.人生状态与自我实现,
     }
     const outputPath = `${SERVER_DATA_DIR}/${item.专业代码}.json`
     await fs.writeFile(outputPath, JSON.stringify(serverData, null, 2), 'utf-8')

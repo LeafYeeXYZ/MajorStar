@@ -25,11 +25,11 @@ const QUERY_CACHE_KEY = 'search_query'
 const THROTTLE_DELAY = 200
 
 function setCachedQuery(query: string) {
-  localStorage.setItem(QUERY_CACHE_KEY, query)
+  sessionStorage.setItem(QUERY_CACHE_KEY, query)
 }
 
 function getCachedQuery(): string {
-  return localStorage.getItem(QUERY_CACHE_KEY) || ''
+  return sessionStorage.getItem(QUERY_CACHE_KEY) || ''
 }
 
 function SearchPanel({ data, onClick }: SearchProps) {

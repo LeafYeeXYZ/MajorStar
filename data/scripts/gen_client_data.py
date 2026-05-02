@@ -13,16 +13,11 @@ class MajorData(TypedDict):
     专业名称: str
     专业代码: str
     简介: str
-    知识结构: str
-    学习方式: str
-    适合人群: str
-    常见误解: str
-    就业方向: str
-    竞争与门槛: str
-    校际差异: str
-    高中准备: str
-    未来发展: str
-    人生价值: str
+    知识结构与学习方式: str
+    人格特质与能力要求: str
+    就业方向与竞争门槛: str
+    未来发展与常见误解: str
+    人生状态与自我实现: str
     embedding: list[float] # 1024 维向量
 
 class ClientData(TypedDict):

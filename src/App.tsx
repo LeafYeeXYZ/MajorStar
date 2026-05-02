@@ -145,6 +145,7 @@ export default function App() {
             }}
             interaction={{
               // brushFilter: true, // 和滑动条冲突
+              // fisheye: true, // 太卡了
               tooltip: {
                 render: (
                   _event: unknown,
