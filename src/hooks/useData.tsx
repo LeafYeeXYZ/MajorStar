@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+
 import type { ClientData } from '../../data/types.ts'
 
 export type Subject =

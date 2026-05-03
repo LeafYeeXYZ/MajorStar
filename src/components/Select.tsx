@@ -31,7 +31,7 @@ export function Select({ options, value, onChange, className, disabled }: Select
         options={options}
         value={value}
         onChange={onChange}
-        className={`disabled:filter disabled:grayscale ${className || ''}`}
+        className={`disabled:grayscale disabled:filter ${className || ''}`}
         disabled={disabled}
       />
     </ConfigProvider>

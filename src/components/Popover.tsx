@@ -66,7 +66,7 @@ export function Popover({ children, content, className }: PopoverProps) {
   return (
     <div
       ref={targetRef}
-      className="inline-block relative"
+      className="relative inline-block"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -75,7 +75,7 @@ export function Popover({ children, content, className }: PopoverProps) {
         createPortal(
           <div
             ref={popoverRef}
-            className={`fixed z-50 border border-blue-950 bg-blue-50 text-blue-950 shadow-md transition duration-100 ease-in-out ${animate ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'} ${className || ''}`}
+            className={`fixed z-50 border border-blue-950 bg-blue-50 text-blue-950 shadow-md transition duration-100 ease-in-out ${animate ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'} ${className || ''}`}
             style={{ top: coords.top, left: coords.left }}
           >
             {content}

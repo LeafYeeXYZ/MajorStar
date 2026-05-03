@@ -1,6 +1,7 @@
+import * as fs from 'node:fs/promises'
+
 // bun run data/scripts/gen_server_data.ts
 import type { MajorData, ServerData } from '../types'
-import * as fs from 'node:fs/promises'
 
 const MAJOR_DATA_PATH = 'data/major_data.json'
 const SERVER_DATA_DIR = 'public/data'

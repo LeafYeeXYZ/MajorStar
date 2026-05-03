@@ -6,20 +6,20 @@ html {
 
 /* 移除 G2 默认的 tooltip 外框样式 */
 .g2-tooltip {
-  @apply bg-transparent! shadow-none! p-0! border-none!;
+  @apply border-none! bg-transparent! p-0! shadow-none!;
 }
 
 /* 优化 antd 的 Modal 样式 */
 .ant-modal-container {
-  @apply rounded-none! border border-blue-950! m-3!;
+  @apply m-3! rounded-none! border border-blue-950!;
 }
 .ant-modal-content {
-  @apply rounded-none! border border-blue-950! bg-blue-50! overflow-hidden!;
+  @apply overflow-hidden! rounded-none! border border-blue-950! bg-blue-50!;
 }
 
 /* 优化 antd 的 Button 样式 */
 .ant-btn {
-  @apply border border-blue-950! bg-blue-50! text-blue-950! rounded-none! shadow-none! transition! duration-150! ease-in-out!;
+  @apply rounded-none! border border-blue-950! bg-blue-50! text-blue-950! shadow-none! transition! duration-150! ease-in-out!;
 }
 .ant-btn:hover {
   @apply bg-blue-950! text-white!;
@@ -30,5 +30,5 @@ html {
 
 /* 优化 antd 的 Skeleton 样式 */
 .ant-skeleton-node {
-  @apply bg-blue-50! rounded-none! text-blue-950! border border-blue-950!;
+  @apply rounded-none! border border-blue-950! bg-blue-50! text-blue-950!;
 }

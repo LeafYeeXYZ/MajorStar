@@ -1,22 +1,24 @@
-import type { ClientData } from '../data/types.ts'
-import { Modal, type TourProps } from 'antd'
 import {
   QuestionCircleOutlined,
   DotChartOutlined,
   GiftOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons'
+import { Modal, type TourProps, Switch } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useData, SUBJECTS } from './hooks/useData.tsx'
-import { Major } from './components/Major.tsx'
+
+import type { ClientData } from '../data/types.ts'
 import { Button } from './components/Button.tsx'
-import { Tour } from './components/Tour.tsx'
-import { Select } from './components/Select.tsx'
-import { Search } from './components/Search.tsx'
 import { LoadingScreen, ErrorScreen } from './components/Loading.tsx'
+import { Major } from './components/Major.tsx'
 import { Popover } from './components/Popover.tsx'
+import { Search } from './components/Search.tsx'
+import { Select } from './components/Select.tsx'
+import { Tour } from './components/Tour.tsx'
+import { useData, SUBJECTS } from './hooks/useData.tsx'
 
 const IS_TOUR_PLAYED_KEY = 'isTourPlayed'
+const USE_SCATTER_WEBGL_KEY = 'useScatterWebgl'
 
 export default function App() {
   const { scatterConfig, scatterData, loading: dataLoading, error: dataError } = useData()
@@ -61,30 +63,53 @@ export default function App() {
     openRef.current = true
   }
 
+  const [useScatterWebgl, setUseScatterWebgl] = useState<boolean>(
+    localStorage.getItem(USE_SCATTER_WEBGL_KEY) === 'true',
+  )
   const [scatterLoading, setScatterLoading] = useState<boolean>(true)
   const [scatterError, setScatterError] = useState<string | null>(null)
   const [scatter, setScatter] = useState<React.ReactNode | null>(null)
   useEffect(() => {
     setScatterLoading(true)
     setScatterError(null)
-    import('./components/Scatter.tsx')
-      .then(({ Scatter }) => {
-        if (dataLoading || dataError) return
-        setScatter(
-          <Scatter
-            catagory={catagory}
-            scatterData={scatterData}
-            scatterConfig={scatterConfig}
-            openModal={openModal}
-          />,
-        )
-        setScatterLoading(false)
-      })
-      .catch((err) => {
-        setScatterError(err instanceof Error ? err.message : '专业星云加载失败')
-        setScatterLoading(false)
-      })
-  }, [dataLoading, dataError, scatterConfig, scatterData, catagory, modal])
+    if (useScatterWebgl) {
+      import('./components/ScatterWebgl.tsx')
+        .then(({ Scatter }) => {
+          if (dataLoading || dataError) return
+          setScatter(
+            <Scatter
+              catagory={catagory}
+              scatterData={scatterData}
+              scatterConfig={scatterConfig}
+              openModal={openModal}
+            />,
+          )
+          setScatterLoading(false)
+        })
+        .catch((err) => {
+          setScatterError(err instanceof Error ? err.message : '专业星云加载失败')
+          setScatterLoading(false)
+        })
+    } else {
+      import('./components/Scatter.tsx')
+        .then(({ Scatter }) => {
+          if (dataLoading || dataError) return
+          setScatter(
+            <Scatter
+              catagory={catagory}
+              scatterData={scatterData}
+              scatterConfig={scatterConfig}
+              openModal={openModal}
+            />,
+          )
+          setScatterLoading(false)
+        })
+        .catch((err) => {
+          setScatterError(err instanceof Error ? err.message : '专业星云加载失败')
+          setScatterLoading(false)
+        })
+    }
+  }, [dataLoading, dataError, scatterConfig, scatterData, catagory, modal, useScatterWebgl])
 
   const loading = dataLoading || scatterLoading
   const error = dataError || scatterError
@@ -161,7 +186,7 @@ export default function App() {
   }, [loading, error])
 
   return (
-    <div className="relative w-dvw h-dvh overflow-hidden">
+    <div className="relative h-dvh w-dvw overflow-hidden">
       {contextHolder}
       <Tour
         open={tourOpen}
@@ -173,13 +198,13 @@ export default function App() {
           setTourOpen(false)
         }}
       />
-      <header className="absolute top-0 left-0 w-full h-12 flex flex-row items-center z-10 pl-4 pr-3 pt-2 justify-between gap-4">
-        <div className="flex items-center font-semibold gap-3">
-          <div className="mr-0 lg:mr-2 text-nowrap text-2xl text-blue-950">专业星云</div>
+      <header className="absolute top-0 left-0 z-10 flex h-12 w-full flex-row items-center justify-between gap-4 pt-2 pr-3 pl-4">
+        <div className="flex items-center gap-3 font-semibold">
+          <div className="mr-0 text-2xl text-nowrap text-blue-950 lg:mr-2">专业星云</div>
           <div ref={infoRef}>
             <Popover
               content={
-                <div className="flex flex-col items-start gap-[0.3rem] font-semibold text-[0.8rem] px-3 py-2">
+                <div className="flex flex-col items-start gap-[0.3rem] px-3 py-2 text-[0.8rem] font-semibold">
                   <div>
                     GitHub开源地址:{' '}
                     <a
@@ -193,10 +218,22 @@ export default function App() {
                   </div>
                   <div>专业数据来源: 普通高等学校本科专业目录 (2026年)</div>
                   <div>专业描述来源: DeepSeek-V4-Pro 生成, 仅供参考</div>
+                  <div>
+                    使用开发中的新版散点图组件(基于WebGL):
+                    <Switch
+                      checked={useScatterWebgl}
+                      onChange={(checked) => {
+                        setUseScatterWebgl(checked)
+                        localStorage.setItem(USE_SCATTER_WEBGL_KEY, String(checked))
+                      }}
+                      size="small"
+                      className="ml-2!"
+                    />
+                  </div>
                 </div>
               }
             >
-              <Button className="h-9 w-9 flex items-center justify-center">
+              <Button className="flex h-9 w-9 items-center justify-center">
                 <InfoCircleOutlined className="m-0!" />
               </Button>
             </Popover>
@@ -207,7 +244,7 @@ export default function App() {
                 setTourOpen(true)
               }}
               disabled={loading || !!error}
-              className="h-9 w-9 flex items-center justify-center"
+              className="flex h-9 w-9 items-center justify-center"
             >
               <QuestionCircleOutlined className="m-0!" />
             </Button>
@@ -221,16 +258,16 @@ export default function App() {
                 openModal(randomData)
               }}
               disabled={loading || !!error}
-              className="h-9 w-9 flex items-center justify-center"
+              className="flex h-9 w-9 items-center justify-center"
             >
               <GiftOutlined className="m-0!" />
             </Button>
           </div>
         </div>
-        <div className="flex flex-row items-center gap-3 font-semibold flex-nowrap text-sm overflow-auto">
-          <div className="flex items-center w-max" ref={catagoryRef}>
+        <div className="flex flex-row flex-nowrap items-center gap-3 overflow-auto text-sm font-semibold">
+          <div className="flex w-max items-center" ref={catagoryRef}>
             <Select
-              className="w-26! h-9!"
+              className="h-9! w-26!"
               value={catagory}
               onChange={(value) => {
                 setCategory(value)
@@ -254,7 +291,7 @@ export default function App() {
           </div>
         </div>
       </header>
-      <section className="w-full h-full">
+      <section className="h-full w-full">
         {loading ? (
           <LoadingScreen icon={<DotChartOutlined className="text-5xl text-blue-950" />} />
         ) : error ? (

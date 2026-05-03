@@ -1,7 +1,9 @@
+import * as fs from 'node:fs/promises'
+
+import OpenAI from 'openai'
+
 // bun run data/scripts/regen_major_vec.ts
 import type { MajorData } from '../types'
-import OpenAI from 'openai'
-import * as fs from 'node:fs/promises'
 import { RESPONSE_SCHEMA } from './gen_major_data.ts'
 
 const DATA_PATH = 'data/major_data.json' // 记得压缩

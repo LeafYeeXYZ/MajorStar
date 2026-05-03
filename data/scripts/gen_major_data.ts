@@ -1,8 +1,10 @@
+import * as fs from 'node:fs/promises'
+
+import OpenAI from 'openai'
+import z from 'zod'
+
 // bun run data/scripts/gen_major_data.ts
 import type { RawData, MajorData } from '../types'
-import OpenAI from 'openai'
-import * as fs from 'node:fs/promises'
-import z from 'zod'
 
 const RAW_DATA_PATH = 'data/raw_data.json' // 记得压缩
 const OUTPUT_PATH = 'data/major_data.json' // 记得压缩

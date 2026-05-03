@@ -1,6 +1,7 @@
 import { Scatter as AntScatter } from '@ant-design/plots'
-import { type ScatterData, type ScatterConfig, type Subject, SUBJECTS } from '../hooks/useData'
+
 import type { ClientData } from '../../data/types'
+import { type ScatterData, type ScatterConfig, type Subject, SUBJECTS } from '../hooks/useData'
 
 function escapeHtml(value: string): string {
   return value

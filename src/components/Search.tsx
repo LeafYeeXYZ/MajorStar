@@ -1,9 +1,10 @@
-import type { ClientData } from '../../data/types.ts'
-import { Popover } from './Popover.tsx'
-import { Button } from './Button.tsx'
 import { SearchOutlined } from '@ant-design/icons'
 import { Input } from 'antd'
 import { useEffect, useRef, useState } from 'react'
+
+import type { ClientData } from '../../data/types.ts'
+import { Button } from './Button.tsx'
+import { Popover } from './Popover.tsx'
 
 type SearchProps = {
   data: ClientData[]
@@ -14,7 +15,7 @@ type SearchProps = {
 export function Search({ data, onClick, disabled }: SearchProps) {
   return (
     <Popover content={<SearchPanel data={data} onClick={onClick} />}>
-      <Button disabled={disabled} className="h-9 w-9 flex items-center justify-center">
+      <Button disabled={disabled} className="flex h-9 w-9 items-center justify-center">
         <SearchOutlined className="m-0!" />
       </Button>
     </Popover>
@@ -73,24 +74,24 @@ function SearchPanel({ data, onClick }: SearchProps) {
     : []
 
   return (
-    <div className="flex flex-col items-start overflow-auto py-2 px-3 w-[min(calc(100dvw-1.5rem),24rem)]">
-      <div className="text-blue-950 text-base font-semibold mb-1.5 px-px">搜索专业</div>
-      <div className="w-full mb-2">
+    <div className="flex w-[min(calc(100dvw-1.5rem),24rem)] flex-col items-start overflow-auto px-3 py-2">
+      <div className="mb-1.5 px-px text-base font-semibold text-blue-950">搜索专业</div>
+      <div className="mb-2 w-full">
         <Input
-          className="border border-blue-950! rounded-none!"
+          className="rounded-none! border border-blue-950!"
           placeholder="输入专业名称或代码搜索"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
-      <div className="font-semibold w-full">
+      <div className="w-full font-semibold">
         {filteredData.length > 0 ? (
-          <ul className="flex flex-col gap-px overflow-auto max-h-[50dvh] w-full text-[0.8rem]">
+          <ul className="flex max-h-[50dvh] w-full flex-col gap-px overflow-auto text-[0.8rem]">
             {filteredData.map((item) => (
               <li
                 key={item.专业代码}
                 onClick={() => onClick(item)}
-                className="cursor-pointer hover:bg-blue-200/80 px-2 py-1 flex items-center justify-between"
+                className="flex cursor-pointer items-center justify-between px-2 py-1 hover:bg-blue-200/80"
               >
                 <div>
                   {item.专业名称} {item.专业代码}
@@ -102,9 +103,9 @@ function SearchPanel({ data, onClick }: SearchProps) {
             ))}
           </ul>
         ) : throttledQuery ? (
-          <div className="text-blue-950/80 text-xs">无结果</div>
+          <div className="text-xs text-blue-950/80">无结果</div>
         ) : (
-          <div className="text-blue-950/80 text-xs">请输入专业名称或代码进行搜索</div>
+          <div className="text-xs text-blue-950/80">请输入专业名称或代码进行搜索</div>
         )}
       </div>
     </div>

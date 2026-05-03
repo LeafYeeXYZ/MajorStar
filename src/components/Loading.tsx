@@ -1,5 +1,5 @@
-import { Skeleton } from 'antd'
 import { DisconnectOutlined } from '@ant-design/icons'
+import { Skeleton } from 'antd'
 
 type LoadingProps = {
   message?: string
@@ -8,7 +8,7 @@ type LoadingProps = {
 
 export function LoadingScreen({ message = '加载中', icon }: LoadingProps) {
   return (
-    <div className="overflow-hidden w-full h-full p-5 flex items-center justify-center flex-col gap-4">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden p-5">
       <Skeleton.Node active>{icon}</Skeleton.Node>
       <div className="font-semibold text-blue-950">{message}</div>
     </div>
@@ -17,7 +17,7 @@ export function LoadingScreen({ message = '加载中', icon }: LoadingProps) {
 
 export function ErrorScreen({ message }: { message: string }) {
   return (
-    <div className="overflow-hidden w-full h-full p-5 flex items-center justify-center flex-col gap-4">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden p-5">
       <div>
         <DisconnectOutlined className="text-5xl text-blue-950" />
       </div>

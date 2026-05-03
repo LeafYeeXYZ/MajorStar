@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
 import { AlignLeftOutlined } from '@ant-design/icons'
+import { useEffect, useState } from 'react'
+
 import { ServerDataSchema, type ClientData, type ServerData } from '../../data/types.ts'
 import { LoadingScreen, ErrorScreen } from './Loading.tsx'
 
@@ -11,11 +12,11 @@ type DetailSectionProps = {
 function DetailSection({ title, children }: DetailSectionProps) {
   return (
     <section className={`overflow-hidden border border-blue-950`}>
-      <div className="flex items-center gap-3 border-b border-blue-950 px-3 py-2 bg-blue-50">
+      <div className="flex items-center gap-3 border-b border-blue-950 bg-blue-50 px-3 py-2">
         <span className={`h-2 w-2 border border-blue-950 bg-blue-200`} />
         <div className="text-base font-semibold text-blue-950">{title}</div>
       </div>
-      <div className="px-3.5 py-2 text-sm leading-6 text-blue-950 bg-white">{children}</div>
+      <div className="bg-white px-3.5 py-2 text-sm leading-6 text-blue-950">{children}</div>
     </section>
   )
 }
@@ -28,17 +29,17 @@ type TitleSectionProps = {
 function TitleSection({ clientData, shortIntro }: TitleSectionProps) {
   return (
     <section className="overflow-hidden">
-      <div className="flex flex-col max-w-3xl min-w-full">
-        <div className="pt-2 pb-5 mb-3 flex items-start justify-between gap-2.5 border-blue-950 border-b-2 border-dashed">
+      <div className="flex max-w-3xl min-w-full flex-col">
+        <div className="mb-3 flex items-start justify-between gap-2.5 border-b-2 border-dashed border-blue-950 pt-2 pb-5">
           <div className="text-3xl sm:text-4xl">{clientData['专业名称']}</div>
-          <div className="flex items-center gap-2 font-semibold text-sm flex-wrap justify-end">
+          <div className="flex flex-wrap items-center justify-end gap-2 text-sm font-semibold">
             <div>{clientData['专业代码']}</div>
             <div>
               {clientData['学科门类']}-{clientData['专业类']}
             </div>
           </div>
         </div>
-        <div className="text-sm font-semibold text-blue-950/90 pl-0.5 leading-6">{shortIntro}</div>
+        <div className="pl-0.5 text-sm leading-6 font-semibold text-blue-950/90">{shortIntro}</div>
       </div>
     </section>
   )
@@ -56,19 +57,19 @@ function SimilarMajorsSection({ majors, onClick }: SimilarMajorsSectionProps) {
         <span className={`h-2 w-2 border border-blue-950 bg-blue-200`} />
         <div className="text-base font-semibold text-blue-950">相似专业</div>
       </div>
-      <div className="p-3 text-blue-950 bg-white">
-        <ul className="flex flex-row flex-wrap gap-3 items-center justify-between">
+      <div className="bg-white p-3 text-blue-950">
+        <ul className="flex flex-row flex-wrap items-center justify-between gap-3">
           {majors.map((item) => (
             <li
               key={item['专业代码']}
               onClick={() => onClick(item)}
-              className="cursor-pointer hover:bg-blue-100/60 px-2.5 pt-1.5 pb-2 border border-blue-950 w-[calc(50%-0.375rem)] md:w-[calc(33.33%-0.5rem)] bg-blue-50/30"
+              className="w-[calc(50%-0.375rem)] cursor-pointer border border-blue-950 bg-blue-50/30 px-2.5 pt-1.5 pb-2 hover:bg-blue-100/60 md:w-[calc(33.33%-0.5rem)]"
             >
-              <div className="flex items-center justify-between flex-wrap">
-                <div className="font-semibold text-sm text-blue-950">{item['专业名称']}</div>
-                <div className="font-semibold text-sm text-blue-950">{item['专业代码']}</div>
+              <div className="flex flex-wrap items-center justify-between">
+                <div className="text-sm font-semibold text-blue-950">{item['专业名称']}</div>
+                <div className="text-sm font-semibold text-blue-950">{item['专业代码']}</div>
               </div>
-              <div className="font-semibold text-xs text-blue-950/80 mt-0.5">{`相似度 ${(item.similarity * 100).toFixed(2)}%`}</div>
+              <div className="mt-0.5 text-xs font-semibold text-blue-950/80">{`相似度 ${(item.similarity * 100).toFixed(2)}%`}</div>
             </li>
           ))}
         </ul>
