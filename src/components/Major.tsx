@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Skeleton } from 'antd'
 import { AlignLeftOutlined } from '@ant-design/icons'
 import { ServerDataSchema, type ClientData, type ServerData } from '../../data/types.ts'
+import { LoadingScreen, ErrorScreen } from './Loading.tsx'
 
 type DetailSectionProps = {
   title: string
@@ -150,16 +150,9 @@ export function Major({ targetData, allData, openModal }: MajorProps) {
   return (
     <div className="text-blue-950">
       {loading ? (
-        <div className="overflow-hidden w-full h-full p-5 flex items-center justify-center flex-col gap-4">
-          <Skeleton.Node active>
-            <AlignLeftOutlined className="text-5xl text-blue-950" />
-          </Skeleton.Node>
-          <div className="font-semibold text-blue-950">加载中</div>
-        </div>
+        <LoadingScreen icon={<AlignLeftOutlined className="text-5xl text-blue-950" />} />
       ) : error ? (
-        <div className="overflow-hidden w-full h-full p-5 flex items-center justify-center text-center">
-          <div className="text-blue-950 font-semibold">加载失败: {error}</div>
-        </div>
+        <ErrorScreen message={error} />
       ) : data ? (
         <div className="space-y-4">
           <TitleSection clientData={targetData} shortIntro={data['简介']} />

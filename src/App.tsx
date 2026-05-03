@@ -1,32 +1,17 @@
 import type { ClientData } from '../data/types.ts'
-import { Modal, type TourProps, Skeleton } from 'antd'
+import { Modal, type TourProps } from 'antd'
 import { QuestionCircleOutlined, DotChartOutlined, GiftOutlined } from '@ant-design/icons'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useData, SUBJECTS, type Subject } from './hooks/useData.tsx'
+import { useData, SUBJECTS } from './hooks/useData.tsx'
 import { Info } from './components/Info.tsx'
 import { Major } from './components/Major.tsx'
 import { Button } from './components/Button.tsx'
 import { Tour } from './components/Tour.tsx'
 import { Select } from './components/Select.tsx'
 import { Search } from './components/Search.tsx'
+import { LoadingScreen, ErrorScreen } from './components/Loading.tsx'
 
-function getIsTourPlayed(): boolean {
-  const isPlayed = localStorage.getItem('isTourPlayed')
-  return isPlayed === 'true'
-}
-
-function setIsTourPlayed(isPlayed: boolean): void {
-  localStorage.setItem('isTourPlayed', String(isPlayed))
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
-}
+const IS_TOUR_PLAYED_KEY = 'isTourPlayed'
 
 export default function App() {
   const { scatterConfig, scatterData, loading: dataLoading, error: dataError } = useData()
@@ -77,137 +62,15 @@ export default function App() {
   useEffect(() => {
     setScatterLoading(true)
     setScatterError(null)
-    import('@ant-design/plots/es/components/scatter')
-      .then(({ default: Scatter }) => {
+    import('./components/Scatter.tsx')
+      .then(({ Scatter }) => {
         if (dataLoading || dataError) return
         setScatter(
           <Scatter
-            className="pt-12!"
-            xField="a"
-            yField="b"
-            colorField={catagory === '全部专业' ? '学科门类' : '专业类'}
-            shapeField="point"
-            slider={{
-              x: {
-                labelFormatter: (d: number) => d.toFixed(2),
-                showLabel: false,
-                style: {
-                  selectionFill: '#eff6ff',
-                  selectionFillOpacity: 1,
-                  selectionStroke: '#162456',
-                  handleIconRadius: 0,
-                  handleIconFill: '#eff6ff',
-                  handleIconStroke: '#162456',
-                  handleIconStrokeOpacity: 1,
-                },
-              },
-              y: {
-                labelFormatter: (d: number) => d.toFixed(2),
-                showLabel: false,
-                style: {
-                  selectionFill: '#eff6ff',
-                  selectionFillOpacity: 1,
-                  selectionStroke: '#162456',
-                  handleIconRadius: 0,
-                  handleIconFill: '#eff6ff',
-                  handleIconStroke: '#162456',
-                  handleIconStrokeOpacity: 1,
-                },
-              },
-            }}
-            scale={
-              catagory === '全部专业'
-                ? scatterConfig?.all
-                : scatterConfig?.subjects[SUBJECTS.indexOf(catagory as Subject)]
-            }
-            style={{ stroke: 'rgba(22,36,86,0.9)' }}
-            label={[
-              {
-                text: '专业名称',
-                style: { dy: -20 },
-                transform: [{ type: 'overlapHide' }],
-              },
-            ]}
-            tooltip={{
-              title: '专业名称',
-              items: ['专业代码', '学科门类', '专业类', '简介'],
-            }}
-            data={
-              catagory === '全部专业'
-                ? scatterData?.all
-                : scatterData?.subjects[SUBJECTS.indexOf(catagory as Subject)]
-            }
-            onEvent={(_, e) => {
-              if (e.type === 'click' && e.data && e.data.data) {
-                const data = e.data.data as ClientData
-                openModal(data)
-              }
-            }}
-            interaction={{
-              // brushFilter: true, // 和滑动条冲突
-              // fisheye: true, // 太卡了
-              tooltip: {
-                render: (
-                  _event: unknown,
-                  tooltipData: {
-                    title?: string
-                    items?: Array<{
-                      color?: string
-                      name?: string
-                      value?: string | number | null
-                    }>
-                  },
-                ) => {
-                  const { title, items } = tooltipData as {
-                    title?: string
-                    items?: Array<{
-                      color?: string
-                      name?: string
-                      value?: string | number | null
-                    }>
-                  }
-                  const safeTitle = escapeHtml(title ?? '')
-                  const safeItems = (items ?? [])
-                    .map((item) => {
-                      const name = escapeHtml(item.name ?? '')
-                      const value = escapeHtml(String(item.value ?? ''))
-                      const color = item.color ?? '#1677ff'
-                      const showValue = value === '' ? '-' : value
-
-                      if (item.name === '简介') {
-                        return `
-                        <div class="mt-3 pt-3 border-t border-blue-950/20">
-                          <div class="text-[13px] leading-[1.7] text-blue-950 line-clamp-4">${showValue}</div>
-                        </div>
-                      `
-                      }
-
-                      return `
-                      <div class="flex items-center justify-between gap-4 py-1.5">
-                        <div class="flex items-center gap-2 min-w-0">
-                          <span class="w-2 h-2 rounded-full shrink-0" style="background: ${color};"></span>
-                          <span class="text-xs text-blue-950/70 shrink-0">${name}</span>
-                        </div>
-                        <div class="text-xs font-semibold text-blue-950 text-right truncate">${showValue}</div>
-                      </div>
-                    `
-                    })
-                    .join('')
-
-                  return `
-                  <div class="min-w-70 max-w-105 px-3 py-2.5 bg-blue-50 border border-blue-950 text-blue-950 shadow-md">
-                    <div class="flex items-start justify-between gap-3 mb-3">
-                      <div class="min-w-0">
-                        <div class="text-[15px] font-bold leading-[1.4]">${safeTitle}</div>
-                        <div class="mt-1 text-xs text-blue-950/60">点击可查看详细描述</div>
-                      </div>
-                    </div>
-                    ${safeItems}
-                  </div>
-                `
-                },
-              },
-            }}
+            catagory={catagory}
+            scatterData={scatterData}
+            scatterConfig={scatterConfig}
+            openModal={openModal}
           />,
         )
         setScatterLoading(false)
@@ -286,9 +149,9 @@ export default function App() {
   const [tourOpen, setTourOpen] = useState<boolean>(false)
   useEffect(() => {
     if (loading || error) return
-    if (!getIsTourPlayed()) {
+    if (localStorage.getItem(IS_TOUR_PLAYED_KEY) !== 'true') {
+      localStorage.setItem(IS_TOUR_PLAYED_KEY, 'true')
       setTourOpen(true)
-      setIsTourPlayed(true)
     }
   }, [loading, error])
 
@@ -366,16 +229,9 @@ export default function App() {
       </header>
       <section className="w-full h-full">
         {loading ? (
-          <div className="overflow-hidden w-full h-full p-5 flex items-center justify-center flex-col gap-4">
-            <Skeleton.Node active>
-              <DotChartOutlined className="text-5xl text-blue-950" />
-            </Skeleton.Node>
-            <div className="font-semibold text-blue-950">加载中</div>
-          </div>
+          <LoadingScreen icon={<DotChartOutlined className="text-5xl text-blue-950" />} />
         ) : error ? (
-          <div className="overflow-hidden w-full h-full p-5 flex items-center justify-center">
-            <div className="text-blue-950 font-semibold">加载失败: {error}</div>
-          </div>
+          <ErrorScreen message={error} />
         ) : (
           <>{scatter}</>
         )}

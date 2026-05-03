@@ -15,7 +15,7 @@ export type Subject =
   | '管理学'
   | '艺术学'
 
-type ScatterConfig = {
+export type ScatterConfig = {
   all: {
     x: {
       domain: [number, number]
@@ -34,7 +34,7 @@ type ScatterConfig = {
   }[]
 }
 
-type ScatterData = {
+export type ScatterData = {
   all: (ClientData & {
     a: number
     b: number
