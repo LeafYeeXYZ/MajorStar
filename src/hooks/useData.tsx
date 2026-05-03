@@ -46,7 +46,7 @@ export type ScatterData = {
 }
 
 const RAW_CLIENT_DATA_URL = '/data.json'
-const LABELS_OFFSET = 0.5
+const LABELS_OFFSET = 1
 export const SUBJECTS: Subject[] = [
   '哲学',
   '经济学',

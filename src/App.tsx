@@ -1,15 +1,20 @@
 import type { ClientData } from '../data/types.ts'
 import { Modal, type TourProps } from 'antd'
-import { QuestionCircleOutlined, DotChartOutlined, GiftOutlined } from '@ant-design/icons'
+import {
+  QuestionCircleOutlined,
+  DotChartOutlined,
+  GiftOutlined,
+  InfoCircleOutlined,
+} from '@ant-design/icons'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useData, SUBJECTS } from './hooks/useData.tsx'
-import { Info } from './components/Info.tsx'
 import { Major } from './components/Major.tsx'
 import { Button } from './components/Button.tsx'
 import { Tour } from './components/Tour.tsx'
 import { Select } from './components/Select.tsx'
 import { Search } from './components/Search.tsx'
 import { LoadingScreen, ErrorScreen } from './components/Loading.tsx'
+import { Popover } from './components/Popover.tsx'
 
 const IS_TOUR_PLAYED_KEY = 'isTourPlayed'
 
@@ -172,7 +177,29 @@ export default function App() {
         <div className="flex items-center font-semibold gap-3">
           <div className="mr-0 lg:mr-2 text-nowrap text-2xl text-blue-950">专业星云</div>
           <div ref={infoRef}>
-            <Info />
+            <Popover
+              content={
+                <div className="flex flex-col items-start gap-[0.3rem] font-semibold text-[0.8rem] px-3 py-2">
+                  <div>
+                    GitHub开源地址:{' '}
+                    <a
+                      href="https://github.com/LeafYeeXYZ/MajorStar"
+                      className="text-blue-600 hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      LeafYeeXYZ/MajorStar
+                    </a>
+                  </div>
+                  <div>专业数据来源: 普通高等学校本科专业目录 (2026年)</div>
+                  <div>专业描述来源: DeepSeek-V4-Pro 生成, 仅供参考</div>
+                </div>
+              }
+            >
+              <Button className="h-9 w-9 flex items-center justify-center">
+                <InfoCircleOutlined className="m-0!" />
+              </Button>
+            </Popover>
           </div>
           <div ref={helpRef}>
             <Button
