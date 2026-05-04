@@ -1,17 +1,23 @@
 // TODO:
-// - [ ] 优化性能：目前每次鼠标移动都会遍历所有点来检测 hover，数据量大时可能会有性能问题。可以考虑使用空间分割算法（如四叉树）来加速点的查找
-// - [ ] 优化 Tooltip：将 Tooltip 独立成一个组件，并使用 React Portal 将其渲染到 DOM 中，而不是在 PixiJS 中绘制。这样可以更灵活地控制样式和内容，同时避免在 PixiJS 中处理文本换行等复杂布局问题
-// - [ ] 实现文字标签：实现类似 Scatter.tsx 中的标签功能，能自动隐藏重叠的标签
+// - [x] 优化 Tooltip：将 Tooltip 独立成一个组件，并使用 React Portal 将其渲染到 DOM 中，而不是在 PixiJS 中绘制。这样可以更灵活地控制样式和内容，同时避免在 PixiJS 中处理文本换行等复杂布局问题
+// - [x] 添加图例：显示颜色与学科门类/专业类的对应关系
+// - [x] 实现文字标签：实现类似 Scatter.tsx 中的标签功能，能自动隐藏重叠的标签
 // - [ ] 添加缩放和平移功能：允许用户缩放和平移散点图，以便更好地查看数据分布
-// - [ ] 添加图例：显示颜色与学科门类/专业类的对应关系
+// - [ ] 优化移动端体验：目前的交互方式不太适配移动端
 
 import { Application, extend } from '@pixi/react'
-import { Container, Graphics, Text } from 'pixi.js'
+import { Graphics, Text, Container } from 'pixi.js'
 import { useMemo, useRef, useState } from 'react'
 
 import type { ClientData } from '../../data/types'
 import { type ScatterData, type ScatterConfig, type Subject, SUBJECTS } from '../hooks/useData'
 import { useScreen } from '../hooks/useScreen'
+import { generateColorMapping } from './Scatter/colors'
+import { Legend } from './Scatter/Legend'
+import { Tooltip } from './Scatter/Tooltip'
+import { parseOffset } from './Scatter/utils'
+
+extend({ Graphics, Text, Container })
 
 type ScatterProps = {
   catagory: string
@@ -20,12 +26,16 @@ type ScatterProps = {
   openModal: (data: ClientData) => void
 }
 
-extend({ Graphics, Container, Text })
-
 const POINT_RADIUS = 3
-const MOUSE_OVER_FPS = 30
+const MOUSE_OVER_FPS = 20
 const TOOLTIP_WIDTH = 300
 const TOOLTIP_HEIGHT = 116
+const OFFSET_HEIGHT = parseOffset('3.5rem')
+const LEGEND_HEIGHT = parseOffset('2.5rem')
+const LABEL_FONT_SIZE = 12
+const LABEL_OFFSET_Y = -22
+const LABEL_SAFEZONE_Y = 20
+const LABEL_SAFEZONE_X = 15
 
 export function Scatter({
   catagory,
@@ -35,39 +45,79 @@ export function Scatter({
 }: ScatterProps) {
   const lastMouseOverTriggerRef = useRef<number>(0)
 
-  const openModal = (code: string) => {
-    if (!scatterData) return
-    const target = scatterData.all.find((item) => item['专业代码'] === code)
-    if (target) {
-      _openModal(target)
+  const openModal = useMemo(() => {
+    return (code: string) => {
+      if (!scatterData) return
+      const target = scatterData.all.find((item) => item['专业代码'] === code)
+      if (target) {
+        _openModal(target)
+      }
     }
-  }
+  }, [scatterData, _openModal])
 
-  const { width, height } = useScreen({ offsetHeight: '3.5rem' })
+  const { width, height } = useScreen({ offsetHeight: OFFSET_HEIGHT + LEGEND_HEIGHT })
 
-  const data =
-    catagory === '全部专业'
-      ? scatterData?.all
-      : scatterData?.subjects[SUBJECTS.indexOf(catagory as Subject)]
+  const fields = useMemo(() => {
+    if (!scatterData) return null
+    return catagory === '全部专业'
+      ? new Set(SUBJECTS)
+      : new Set(
+          scatterData.subjects[SUBJECTS.indexOf(catagory as Subject)].map(
+            (item) => item['专业类'] ?? '',
+          ),
+        )
+  }, [catagory, scatterData])
 
-  const config =
-    catagory === '全部专业'
-      ? scatterConfig?.all
-      : scatterConfig?.subjects[SUBJECTS.indexOf(catagory as Subject)]
+  const [hideFields, setHideFields] = useState<Set<string> | null>(null)
 
-  const colorKey = catagory === '全部专业' ? '学科门类' : '专业类'
+  const data = useMemo(() => {
+    if (!scatterData) return null
+    return catagory === '全部专业'
+      ? scatterData.all.filter((item) => !hideFields?.has(item['学科门类'] ?? ''))
+      : scatterData.subjects[SUBJECTS.indexOf(catagory as Subject)].filter(
+          (item) => !hideFields?.has(item['专业类'] ?? ''),
+        )
+  }, [catagory, scatterData, hideFields])
+
+  const config = useMemo(() => {
+    if (!scatterConfig) return null
+    return catagory === '全部专业'
+      ? scatterConfig.all
+      : scatterConfig.subjects[SUBJECTS.indexOf(catagory as Subject)]
+  }, [catagory, scatterConfig])
+
+  const colorKey = useMemo(() => {
+    return catagory === '全部专业' ? '学科门类' : '专业类'
+  }, [catagory])
+
   const colorMap = useMemo(() => {
     if (!scatterData) return {}
     return generateColorMapping(scatterData)
   }, [scatterData])
+
+  const legendData = useMemo(() => {
+    if (!scatterData) return null
+    const data: {
+      name: string
+      color: string
+    }[] = []
+    for (const field of fields ?? []) {
+      data.push({
+        name: field,
+        color: colorMap[field] ?? '#000000',
+      })
+    }
+    return data
+  }, [colorMap, fields, scatterData])
 
   const points: {
     x: number
     y: number
     c: `#${string}`
     code: string
+    name: string
   }[] = useMemo(() => {
-    if (!data || !config || width <= 0 || height <= 0) return []
+    if (!data || !config) return []
     const [xMin, xMax] = config.x.domain
     const [yMin, yMax] = config.y.domain
     const xRange = xMax - xMin
@@ -77,8 +127,29 @@ export function Scatter({
       y: height - ((item.b - yMin) / yRange) * height,
       c: colorMap[item[colorKey]],
       code: item['专业代码'],
+      name: item['专业名称'],
     }))
   }, [data, config, width, height, colorMap, colorKey])
+
+  const visibleLabels = useMemo(() => {
+    const visible: Array<(typeof points)[number]> = []
+    const occupiedBoxes: { left: number; top: number; right: number; bottom: number }[] = []
+    for (const point of points) {
+      const labelWidth = point.name.length * LABEL_FONT_SIZE
+      const left = point.x - labelWidth / 2 - LABEL_SAFEZONE_X
+      const top = point.y + LABEL_OFFSET_Y - LABEL_SAFEZONE_Y
+      const right = point.x - labelWidth / 2 + labelWidth + LABEL_SAFEZONE_X
+      const bottom = top + LABEL_SAFEZONE_Y
+      const hasOverlap = occupiedBoxes.some(
+        (box) => left < box.right && right > box.left && top < box.bottom && bottom > box.top,
+      )
+      if (!hasOverlap) {
+        occupiedBoxes.push({ left, top, right, bottom })
+        visible.push(point)
+      }
+    }
+    return visible
+  }, [points])
 
   const [tooltipData, setTooltipData] = useState<{ x: number; y: number; code: string } | null>(
     null,
@@ -109,195 +180,101 @@ export function Scatter({
   }, [height, tooltipData, width])
 
   return (
-    <Application
-      width={width}
-      height={height}
-      resolution={window.devicePixelRatio}
-      autoDensity
-      className="z-50 mt-14"
-      backgroundColor={'#ffffff'}
-      antialias
-      clearBeforeRender
-    >
-      <pixiGraphics
-        draw={(graphics) => {
-          graphics.clear()
-          graphics.removeAllListeners()
-          for (const point of points) {
-            graphics
-              .circle(point.x, point.y, POINT_RADIUS)
-              .fill({ color: point.c })
-              .setStrokeStyle({
-                width: 1,
-                color: '#162456',
-              })
-              .stroke()
-          }
-          graphics.interactive = true
-          graphics.on('click', (e) => {
-            const { x, y } = e.global
-            for (const point of points) {
-              const dx = point.x - x
-              const dy = point.y - y
-              if (dx * dx + dy * dy <= POINT_RADIUS * POINT_RADIUS) {
-                openModal(point.code)
-                break
-              }
-            }
-          })
-          graphics.on('globalmousemove', (e) => {
-            const now = performance.now()
-            if (now - lastMouseOverTriggerRef.current < 1000 / MOUSE_OVER_FPS) {
-              return
-            }
-            lastMouseOverTriggerRef.current = now
-            const { x, y } = e.global
-            let hovered = false
-            let code = ''
-            for (const point of points) {
-              const dx = point.x - x
-              const dy = point.y - y
-              if (dx * dx + dy * dy <= POINT_RADIUS * POINT_RADIUS) {
-                hovered = true
-                code = point.code
-                break
-              }
-            }
-            if (hovered) {
-              graphics.cursor = 'pointer'
-              setTooltipData({ x, y, code })
-            } else {
-              graphics.cursor = 'default'
-              setTooltipData(null)
-            }
-          })
-        }}
-      />
-      <pixiContainer>
+    <>
+      {legendData && (
+        <Legend
+          data={legendData}
+          height={LEGEND_HEIGHT}
+          offsetY={OFFSET_HEIGHT}
+          hideFields={hideFields}
+          setHideFields={setHideFields}
+        />
+      )}
+      {tooltipItem && (
+        <Tooltip
+          x={tooltipPosition.x}
+          y={tooltipPosition.y}
+          data={tooltipItem}
+          offsetY={OFFSET_HEIGHT + LEGEND_HEIGHT}
+        />
+      )}
+      <Application
+        width={width}
+        height={height}
+        resolution={window.devicePixelRatio}
+        autoDensity
+        className="mt-24"
+        backgroundColor={'#ffffff'}
+        antialias
+        clearBeforeRender
+      >
         <pixiGraphics
+          key={`${width}x${height}`}
           draw={(graphics) => {
             graphics.clear()
-            if (!tooltipItem) {
-              return
+            graphics.removeAllListeners()
+            for (const point of points) {
+              graphics
+                .circle(point.x, point.y, POINT_RADIUS)
+                .fill({ color: point.c })
+                .setStrokeStyle({
+                  width: 1,
+                  color: '#162456',
+                })
+                .stroke()
             }
-            graphics
-              .rect(tooltipPosition.x, tooltipPosition.y, TOOLTIP_WIDTH, TOOLTIP_HEIGHT)
-              .fill({ color: '#eff6ff' })
-              .setStrokeStyle({
-                width: 1,
-                color: '#162456',
-              })
-              .stroke()
+            graphics.interactive = true
+            graphics.on('click', (e) => {
+              const { x, y } = e.global
+              for (const point of points) {
+                const dx = point.x - x
+                const dy = point.y - y
+                if (dx * dx + dy * dy <= POINT_RADIUS * POINT_RADIUS) {
+                  openModal(point.code)
+                  break
+                }
+              }
+            })
+            graphics.on('globalmousemove', (e) => {
+              const now = performance.now()
+              if (now - lastMouseOverTriggerRef.current < 1000 / MOUSE_OVER_FPS) {
+                return
+              }
+              lastMouseOverTriggerRef.current = now
+              const { x, y } = e.global
+              let hovered = false
+              let code = ''
+              for (const point of points) {
+                const dx = point.x - x
+                const dy = point.y - y
+                if (dx * dx + dy * dy <= POINT_RADIUS * POINT_RADIUS) {
+                  hovered = true
+                  code = point.code
+                  break
+                }
+              }
+              if (hovered) {
+                graphics.cursor = 'pointer'
+                setTooltipData({ x, y, code })
+              } else {
+                graphics.cursor = 'default'
+                setTooltipData(null)
+              }
+            })
           }}
         />
-        {tooltipItem ? (
-          <pixiContainer>
+        <pixiContainer>
+          {visibleLabels.map((point) => (
             <pixiText
-              text={tooltipItem['专业名称']}
-              x={tooltipPosition.x + 12}
-              y={tooltipPosition.y + 8}
-              style={{
-                fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
-                fontSize: 16,
-                fill: '#162456',
-                fontWeight: '700',
-                wordWrap: true,
-                wordWrapWidth: TOOLTIP_WIDTH - 24,
-              }}
+              key={point.code}
+              x={point.x - (point.name.length * LABEL_FONT_SIZE) / 2}
+              y={point.y + LABEL_OFFSET_Y}
+              text={point.name}
+              style={{ fill: 'rgba(22,36,86,0.9)', fontSize: LABEL_FONT_SIZE }}
             />
-            <pixiText
-              text={`${tooltipItem['专业代码']}  ${tooltipItem['学科门类']}-${tooltipItem['专业类']}`}
-              x={tooltipPosition.x + 12}
-              y={tooltipPosition.y + 32}
-              style={{
-                fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
-                fontSize: 12,
-                fill: '#162456',
-                fontWeight: '600',
-                wordWrap: true,
-                wordWrapWidth: TOOLTIP_WIDTH - 24,
-              }}
-            />
-            <pixiText
-              text={tooltipItem['简介']}
-              x={tooltipPosition.x + 12}
-              y={tooltipPosition.y + 52}
-              style={{
-                fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
-                fontSize: 12,
-                fill: '#162456',
-                breakWords: true,
-                whiteSpace: 'normal',
-                wordWrap: true,
-                wordWrapWidth: TOOLTIP_WIDTH - 24,
-                lineHeight: 18,
-              }}
-            />
-          </pixiContainer>
-        ) : null}
-      </pixiContainer>
-    </Application>
+          ))}
+        </pixiContainer>
+      </Application>
+    </>
   )
-}
-
-const ORIGINAL_COLORS: `#${string}`[] = [
-  '#fca5a5', // red-300
-  '#fcd34d', // amber-300
-  '#bef264', // lime-300
-  '#6ee7b7', // emerald-300
-  '#67e8f9', // cyan-300
-  '#93c5fd', // blue-300
-  '#c4b5fd', // violet-300
-  '#f0abfc', // fuchsia-300
-  '#fda4af', // rose-300
-  '#fdba74', // orange-300
-  '#fde047', // yellow-300
-  '#86efac', // green-300
-  '#5eead4', // teal-300
-  '#7dd3fc', // sky-300
-  '#a5b4fc', // indigo-300
-  '#d8b4fe', // purple-300
-  '#f9a8d4', // pink-300
-  '#334155', // slate-700
-  '#3f3f46', // zinc-700
-  '#5b4f4b', // taupe-700
-  '#463947', // mauve-700
-  '#394447', // mist-700
-  '#474739', // olive-700
-]
-
-const EXTENDED_COLORS: `#${string}`[] = [
-  ...ORIGINAL_COLORS,
-  ...ORIGINAL_COLORS.map((color) => {
-    // 生成更深的颜色
-    const r = Math.max(0, parseInt(color.slice(1, 3), 16) - 40)
-      .toString(16)
-      .padStart(2, '0')
-    const g = Math.max(0, parseInt(color.slice(3, 5), 16) - 40)
-      .toString(16)
-      .padStart(2, '0')
-    const b = Math.max(0, parseInt(color.slice(5, 7), 16) - 40)
-      .toString(16)
-      .padStart(2, '0')
-    return `#${r}${g}${b}` as `#${string}`
-  }),
-]
-
-function generateColorMapping(data: ScatterData): {
-  [key: string]: `#${string}`
-} {
-  const result: { [key: string]: `#${string}` } = {}
-  let subjectIndex = 0
-  for (const subject of SUBJECTS) {
-    result[subject] = EXTENDED_COLORS[subjectIndex % EXTENDED_COLORS.length]
-    subjectIndex++
-    const subjectData = data.subjects[SUBJECTS.indexOf(subject)]
-    const categories = new Set(subjectData.map((item) => item['专业类']))
-    let categoryIndex = 0
-    for (const category of categories) {
-      result[category] = EXTENDED_COLORS[categoryIndex % EXTENDED_COLORS.length]
-      categoryIndex++
-    }
-  }
-  return result
 }
