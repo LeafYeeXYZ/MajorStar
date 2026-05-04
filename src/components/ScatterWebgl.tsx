@@ -44,6 +44,7 @@ const LABEL_OFFSET_Y = -22
 const LABEL_SAFEZONE_Y = 20
 const LABEL_SAFEZONE_X = 15
 const INTERACTION_THROTTLE_MS = 50
+const INTERACTION_MOBILE_EXPAND = 5
 
 export function Scatter({
   catagory,
@@ -134,11 +135,12 @@ export function Scatter({
   }, [data, config, width, height, colorMap, colorKey])
 
   const getPointAtPosition = useMemo(() => {
-    return (x: number, y: number) => {
+    return (x: number, y: number, mobile?: boolean) => {
+      const distance = mobile ? POINT_RADIUS ** 2 * INTERACTION_MOBILE_EXPAND : POINT_RADIUS ** 2
       for (const point of points) {
         const dx = point.x - x
         const dy = point.y - y
-        if (dx * dx + dy * dy <= POINT_RADIUS * POINT_RADIUS) {
+        if (dx ** 2 + dy ** 2 <= distance) {
           return point
         }
       }
@@ -210,7 +212,6 @@ export function Scatter({
       return
     }
     lastMouseOverTriggerRef.current = now
-
     const target = event.currentTarget.getBoundingClientRect()
     const x = event.clientX - target.left
     const y = event.clientY - target.top
@@ -227,10 +228,11 @@ export function Scatter({
   }
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    const mobile = event.pointerType === 'touch'
     const target = event.currentTarget.getBoundingClientRect()
     const x = event.clientX - target.left
     const y = event.clientY - target.top
-    const point = getPointAtPosition(x, y)
+    const point = getPointAtPosition(x, y, mobile)
     if (point) {
       openModal(point.code)
     }
