@@ -2,12 +2,12 @@
 // - [x] 优化 Tooltip：将 Tooltip 独立成一个组件，并使用 React Portal 将其渲染到 DOM 中，而不是在 PixiJS 中绘制。这样可以更灵活地控制样式和内容，同时避免在 PixiJS 中处理文本换行等复杂布局问题
 // - [x] 添加图例：显示颜色与学科门类/专业类的对应关系
 // - [x] 实现文字标签：实现类似 Scatter.tsx 中的标签功能，能自动隐藏重叠的标签
-// - [ ] 添加缩放和平移功能：允许用户缩放和平移散点图，以便更好地查看数据分布
-// - [ ] 优化移动端体验：目前的交互方式不太适配移动端
+// - [ ] 添加缩放和平移功能：允许用户缩放和平移散点图，以便更好地查看数据分布；还是用独立HTML组件实现; 保证移动端体验
+// - [ ] 更新Tour的文案
 
 import { Application, extend } from '@pixi/react'
 import { Graphics, Text, Container } from 'pixi.js'
-import { useMemo, useRef, useState } from 'react'
+import { type PointerEvent, useMemo, useRef, useState } from 'react'
 
 import type { ClientData } from '../../data/types'
 import { type ScatterData, type ScatterConfig, type Subject, SUBJECTS } from '../hooks/useData'
@@ -26,8 +26,15 @@ type ScatterProps = {
   openModal: (data: ClientData) => void
 }
 
+type Point = {
+  x: number
+  y: number
+  c: `#${string}`
+  code: string
+  name: string
+}
+
 const POINT_RADIUS = 3
-const MOUSE_OVER_FPS = 20
 const TOOLTIP_WIDTH = 300
 const TOOLTIP_HEIGHT = 116
 const OFFSET_HEIGHT = parseOffset('3.5rem')
@@ -36,6 +43,7 @@ const LABEL_FONT_SIZE = 12
 const LABEL_OFFSET_Y = -22
 const LABEL_SAFEZONE_Y = 20
 const LABEL_SAFEZONE_X = 15
+const INTERACTION_THROTTLE_MS = 50
 
 export function Scatter({
   catagory,
@@ -110,13 +118,7 @@ export function Scatter({
     return data
   }, [colorMap, fields, scatterData])
 
-  const points: {
-    x: number
-    y: number
-    c: `#${string}`
-    code: string
-    name: string
-  }[] = useMemo(() => {
+  const points: Point[] = useMemo(() => {
     if (!data || !config) return []
     const [xMin, xMax] = config.x.domain
     const [yMin, yMax] = config.y.domain
@@ -130,6 +132,19 @@ export function Scatter({
       name: item['专业名称'],
     }))
   }, [data, config, width, height, colorMap, colorKey])
+
+  const getPointAtPosition = useMemo(() => {
+    return (x: number, y: number) => {
+      for (const point of points) {
+        const dx = point.x - x
+        const dy = point.y - y
+        if (dx * dx + dy * dy <= POINT_RADIUS * POINT_RADIUS) {
+          return point
+        }
+      }
+      return null
+    }
+  }, [points])
 
   const visibleLabels = useMemo(() => {
     const visible: Array<(typeof points)[number]> = []
@@ -155,6 +170,16 @@ export function Scatter({
     null,
   )
 
+  const updateTooltip = (x: number, y: number) => {
+    const point = getPointAtPosition(x, y)
+    if (point) {
+      setTooltipData({ x, y, code: point.code })
+      return true
+    }
+    setTooltipData(null)
+    return false
+  }
+
   const tooltipItem = useMemo(() => {
     if (!tooltipData || !data) return null
     return data.find((item) => item['专业代码'] === tooltipData.code) ?? null
@@ -179,8 +204,41 @@ export function Scatter({
     }
   }, [height, tooltipData, width])
 
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const now = performance.now()
+    if (now - lastMouseOverTriggerRef.current < INTERACTION_THROTTLE_MS) {
+      return
+    }
+    lastMouseOverTriggerRef.current = now
+
+    const target = event.currentTarget.getBoundingClientRect()
+    const x = event.clientX - target.left
+    const y = event.clientY - target.top
+    if (updateTooltip(x, y)) {
+      event.currentTarget.style.cursor = 'pointer'
+    } else {
+      event.currentTarget.style.cursor = 'default'
+    }
+  }
+
+  const handlePointerLeave = (event: PointerEvent<HTMLDivElement>) => {
+    event.currentTarget.style.cursor = 'default'
+    setTooltipData(null)
+  }
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    const target = event.currentTarget.getBoundingClientRect()
+    const x = event.clientX - target.left
+    const y = event.clientY - target.top
+    const point = getPointAtPosition(x, y)
+    if (point) {
+      openModal(point.code)
+    }
+  }
+
   return (
     <>
+      {/* 图例 */}
       {legendData && (
         <Legend
           data={legendData}
@@ -190,6 +248,7 @@ export function Scatter({
           setHideFields={setHideFields}
         />
       )}
+      {/* 提示框 */}
       {tooltipItem && (
         <Tooltip
           x={tooltipPosition.x}
@@ -198,12 +257,26 @@ export function Scatter({
           offsetY={OFFSET_HEIGHT + LEGEND_HEIGHT}
         />
       )}
+      {/* 事件 */}
+      <div
+        className="fixed z-10"
+        style={{
+          width,
+          height,
+          top: OFFSET_HEIGHT + LEGEND_HEIGHT,
+          left: 0,
+        }}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={handlePointerLeave}
+        onPointerDown={handlePointerDown}
+      />
+      {/* 绘图 */}
       <Application
+        className="mt-24"
         width={width}
         height={height}
         resolution={window.devicePixelRatio}
         autoDensity
-        className="mt-24"
         backgroundColor={'#ffffff'}
         antialias
         clearBeforeRender
@@ -212,7 +285,6 @@ export function Scatter({
           key={`${width}x${height}`}
           draw={(graphics) => {
             graphics.clear()
-            graphics.removeAllListeners()
             for (const point of points) {
               graphics
                 .circle(point.x, point.y, POINT_RADIUS)
@@ -223,44 +295,6 @@ export function Scatter({
                 })
                 .stroke()
             }
-            graphics.interactive = true
-            graphics.on('click', (e) => {
-              const { x, y } = e.global
-              for (const point of points) {
-                const dx = point.x - x
-                const dy = point.y - y
-                if (dx * dx + dy * dy <= POINT_RADIUS * POINT_RADIUS) {
-                  openModal(point.code)
-                  break
-                }
-              }
-            })
-            graphics.on('globalmousemove', (e) => {
-              const now = performance.now()
-              if (now - lastMouseOverTriggerRef.current < 1000 / MOUSE_OVER_FPS) {
-                return
-              }
-              lastMouseOverTriggerRef.current = now
-              const { x, y } = e.global
-              let hovered = false
-              let code = ''
-              for (const point of points) {
-                const dx = point.x - x
-                const dy = point.y - y
-                if (dx * dx + dy * dy <= POINT_RADIUS * POINT_RADIUS) {
-                  hovered = true
-                  code = point.code
-                  break
-                }
-              }
-              if (hovered) {
-                graphics.cursor = 'pointer'
-                setTooltipData({ x, y, code })
-              } else {
-                graphics.cursor = 'default'
-                setTooltipData(null)
-              }
-            })
           }}
         />
         <pixiContainer>
@@ -270,7 +304,7 @@ export function Scatter({
               x={point.x - (point.name.length * LABEL_FONT_SIZE) / 2}
               y={point.y + LABEL_OFFSET_Y}
               text={point.name}
-              style={{ fill: 'rgba(22,36,86,0.9)', fontSize: LABEL_FONT_SIZE }}
+              style={{ fill: 'rgba(22,36,86,0.8)', fontSize: LABEL_FONT_SIZE }}
             />
           ))}
         </pixiContainer>
