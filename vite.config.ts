@@ -14,4 +14,7 @@ export default defineConfig({
     sortTailwindcss: true,
   },
   lint: { options: { typeAware: true, typeCheck: true } },
+  build: {
+    chunkSizeWarningLimit: 1024,
+  },
 })

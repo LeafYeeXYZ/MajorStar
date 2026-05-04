@@ -4,7 +4,7 @@ import {
   GiftOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons'
-import { Modal, type TourProps, Switch } from 'antd'
+import { Modal, type TourProps } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { ClientData } from '../data/types.ts'
@@ -18,10 +18,9 @@ import { Tour } from './components/Tour.tsx'
 import { useData, SUBJECTS } from './hooks/useData.tsx'
 
 const IS_TOUR_PLAYED_KEY = 'isTourPlayed'
-const USE_SCATTER_WEBGL_KEY = 'useScatterWebgl'
 
 export default function App() {
-  const { scatterConfig, scatterData, loading: dataLoading, error: dataError } = useData()
+  const { scatterData, loading: dataLoading, error: dataError } = useData()
   const [catagory, setCategory] = useState<string>('全部专业')
 
   const [modal, contextHolder] = Modal.useModal()
@@ -63,53 +62,23 @@ export default function App() {
     openRef.current = true
   }
 
-  const [useScatterWebgl, setUseScatterWebgl] = useState<boolean>(
-    localStorage.getItem(USE_SCATTER_WEBGL_KEY) === 'true',
-  )
   const [scatterLoading, setScatterLoading] = useState<boolean>(true)
   const [scatterError, setScatterError] = useState<string | null>(null)
   const [scatter, setScatter] = useState<React.ReactNode | null>(null)
   useEffect(() => {
     setScatterLoading(true)
     setScatterError(null)
-    if (useScatterWebgl) {
-      import('./components/ScatterWebgl.tsx')
-        .then(({ Scatter }) => {
-          if (dataLoading || dataError) return
-          setScatter(
-            <Scatter
-              catagory={catagory}
-              scatterData={scatterData}
-              scatterConfig={scatterConfig}
-              openModal={openModal}
-            />,
-          )
-          setScatterLoading(false)
-        })
-        .catch((err) => {
-          setScatterError(err instanceof Error ? err.message : '专业星云加载失败')
-          setScatterLoading(false)
-        })
-    } else {
-      import('./components/Scatter.tsx')
-        .then(({ Scatter }) => {
-          if (dataLoading || dataError) return
-          setScatter(
-            <Scatter
-              catagory={catagory}
-              scatterData={scatterData}
-              scatterConfig={scatterConfig}
-              openModal={openModal}
-            />,
-          )
-          setScatterLoading(false)
-        })
-        .catch((err) => {
-          setScatterError(err instanceof Error ? err.message : '专业星云加载失败')
-          setScatterLoading(false)
-        })
-    }
-  }, [dataLoading, dataError, scatterConfig, scatterData, catagory, modal, useScatterWebgl])
+    import('./components/Scatter')
+      .then(({ Scatter }) => {
+        if (dataLoading || dataError) return
+        setScatter(<Scatter catagory={catagory} scatterData={scatterData} openModal={openModal} />)
+        setScatterLoading(false)
+      })
+      .catch((err) => {
+        setScatterError(err instanceof Error ? err.message : '专业星云加载失败')
+        setScatterLoading(false)
+      })
+  }, [dataLoading, dataError, scatterData, catagory, modal])
 
   const loading = dataLoading || scatterLoading
   const error = dataError || scatterError
@@ -132,8 +101,16 @@ export default function App() {
       },
       {
         title: '专业相似度',
+        description: '在图中, 专业之间的距离表示它们的相似度. 距离越近, 相似度越高.',
+      },
+      {
+        title: '专业基本信息',
         description:
-          '在图中, 专业之间的距离表示它们的相似度. 距离越近, 相似度越高. 你可以用鼠标拖动星云左侧和底部的滑块来放大查看指定区域的内容.',
+          '把鼠标悬停在专业点上, 可以查看该专业的简介、专业代码、学科门类、专业类等基本信息.',
+      },
+      {
+        title: '专业详细描述',
+        description: '点击专业点, 可以加载该专业的详细描述.',
       },
       {
         title: '专业分类',
@@ -145,15 +122,6 @@ export default function App() {
         title: '搜索专业',
         description: '你可以在这里搜索专业名称或专业代码, 点击搜索结果可以查看该专业的详细介绍.',
         target: () => searchRef.current!,
-      },
-      {
-        title: '专业基本信息',
-        description:
-          '把鼠标悬停在专业点上, 可以查看该专业的简介、专业代码、学科门类、专业类等基本信息.',
-      },
-      {
-        title: '专业详细描述',
-        description: '点击专业点, 可以加载该专业的详细描述.',
       },
       {
         title: '关于',
@@ -218,18 +186,6 @@ export default function App() {
                   </div>
                   <div>专业数据来源: 普通高等学校本科专业目录 (2026年)</div>
                   <div>专业描述来源: DeepSeek-V4-Pro 生成, 仅供参考</div>
-                  <div>
-                    使用开发中的新版散点图组件(基于WebGL):
-                    <Switch
-                      checked={useScatterWebgl}
-                      onChange={(checked) => {
-                        setUseScatterWebgl(checked)
-                        localStorage.setItem(USE_SCATTER_WEBGL_KEY, String(checked))
-                      }}
-                      size="small"
-                      className="ml-2!"
-                    />
-                  </div>
                 </div>
               }
             >

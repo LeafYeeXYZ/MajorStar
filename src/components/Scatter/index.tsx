@@ -1,28 +1,21 @@
-// TODO:
-// - [x] 优化 Tooltip：将 Tooltip 独立成一个组件，并使用 React Portal 将其渲染到 DOM 中，而不是在 PixiJS 中绘制。这样可以更灵活地控制样式和内容，同时避免在 PixiJS 中处理文本换行等复杂布局问题
-// - [x] 添加图例：显示颜色与学科门类/专业类的对应关系
-// - [x] 实现文字标签：实现类似 Scatter.tsx 中的标签功能，能自动隐藏重叠的标签
-// - [ ] 添加缩放和平移功能：允许用户缩放和平移散点图，以便更好地查看数据分布；还是用独立HTML组件实现; 保证移动端体验
-// - [ ] 更新Tour的文案
-
 import { Application, extend } from '@pixi/react'
 import { Graphics, Text, Container } from 'pixi.js'
 import { type PointerEvent, useMemo, useRef, useState } from 'react'
 
-import type { ClientData } from '../../data/types'
-import { type ScatterData, type ScatterConfig, type Subject, SUBJECTS } from '../hooks/useData'
-import { useScreen } from '../hooks/useScreen'
-import { generateColorMapping } from './Scatter/colors'
-import { Legend } from './Scatter/Legend'
-import { Tooltip } from './Scatter/Tooltip'
-import { parseOffset } from './Scatter/utils'
+import type { ClientData } from '../../../data/types'
+import { type ScatterData, type Subject, SUBJECTS } from '../../hooks/useData'
+import { useScreen } from '../../hooks/useScreen'
+import { generateColorMapping } from './colors'
+import { Controler } from './Controler'
+import { Legend } from './Legend'
+import { Tooltip } from './Tooltip'
+import { parseOffset } from './utils'
 
 extend({ Graphics, Text, Container })
 
 type ScatterProps = {
   catagory: string
   scatterData: ScatterData | null
-  scatterConfig: ScatterConfig | null
   openModal: (data: ClientData) => void
 }
 
@@ -43,17 +36,11 @@ const LABEL_FONT_SIZE = 12
 const LABEL_OFFSET_Y = -22
 const LABEL_SAFEZONE_Y = 20
 const LABEL_SAFEZONE_X = 15
-const INTERACTION_THROTTLE_MS = 50
+const INTERACTION_THROTTLE_MS = 30
 const INTERACTION_MOBILE_EXPAND = 5
+const SCALE_OFFSET = 0.2
 
-export function Scatter({
-  catagory,
-  scatterData,
-  scatterConfig,
-  openModal: _openModal,
-}: ScatterProps) {
-  const lastMouseOverTriggerRef = useRef<number>(0)
-
+export function Scatter({ catagory, scatterData, openModal: _openModal }: ScatterProps) {
   const openModal = useMemo(() => {
     return (code: string) => {
       if (!scatterData) return
@@ -88,12 +75,28 @@ export function Scatter({
         )
   }, [catagory, scatterData, hideFields])
 
-  const config = useMemo(() => {
-    if (!scatterConfig) return null
-    return catagory === '全部专业'
-      ? scatterConfig.all
-      : scatterConfig.subjects[SUBJECTS.indexOf(catagory as Subject)]
-  }, [catagory, scatterConfig])
+  const { initialMinX, initialMaxX, initialMinY, initialMaxY } = useMemo(() => {
+    if (!scatterData) return { initialMinX: 0, initialMaxX: 1, initialMinY: 0, initialMaxY: 1 }
+    const allData =
+      catagory === '全部专业'
+        ? scatterData.all
+        : scatterData.subjects[SUBJECTS.indexOf(catagory as Subject)]
+    const xValues = allData.map((item) => item.a)
+    const yValues = allData.map((item) => item.b)
+    return {
+      initialMinX: Math.min(...xValues) - SCALE_OFFSET,
+      initialMaxX: Math.max(...xValues) + SCALE_OFFSET,
+      initialMinY: Math.min(...yValues) - SCALE_OFFSET,
+      initialMaxY: Math.max(...yValues) + SCALE_OFFSET,
+    }
+  }, [catagory, scatterData])
+
+  const [{ minX, maxX, minY, maxY }, setScale] = useState({
+    minX: initialMinX,
+    maxX: initialMaxX,
+    minY: initialMinY,
+    maxY: initialMaxY,
+  })
 
   const colorKey = useMemo(() => {
     return catagory === '全部专业' ? '学科门类' : '专业类'
@@ -120,19 +123,19 @@ export function Scatter({
   }, [colorMap, fields, scatterData])
 
   const points: Point[] = useMemo(() => {
-    if (!data || !config) return []
-    const [xMin, xMax] = config.x.domain
-    const [yMin, yMax] = config.y.domain
-    const xRange = xMax - xMin
-    const yRange = yMax - yMin
-    return data.map((item) => ({
-      x: ((item.a - xMin) / xRange) * width,
-      y: height - ((item.b - yMin) / yRange) * height,
-      c: colorMap[item[colorKey]],
-      code: item['专业代码'],
-      name: item['专业名称'],
-    }))
-  }, [data, config, width, height, colorMap, colorKey])
+    if (!data) return []
+    const xRange = maxX - minX
+    const yRange = maxY - minY
+    return data
+      .filter((item) => item.a > minX && item.a < maxX && item.b > minY && item.b < maxY)
+      .map((item) => ({
+        x: ((item.a - minX) / xRange) * width,
+        y: height - ((item.b - minY) / yRange) * height,
+        c: colorMap[item[colorKey]],
+        code: item['专业代码'],
+        name: item['专业名称'],
+      }))
+  }, [data, width, height, colorMap, colorKey, minX, maxX, minY, maxY])
 
   const getPointAtPosition = useMemo(() => {
     return (x: number, y: number, mobile?: boolean) => {
@@ -206,12 +209,13 @@ export function Scatter({
     }
   }, [height, tooltipData, width])
 
+  const mouseThrottleRef = useRef(0)
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     const now = performance.now()
-    if (now - lastMouseOverTriggerRef.current < INTERACTION_THROTTLE_MS) {
+    if (now - mouseThrottleRef.current < INTERACTION_THROTTLE_MS) {
       return
     }
-    lastMouseOverTriggerRef.current = now
+    mouseThrottleRef.current = now
     const target = event.currentTarget.getBoundingClientRect()
     const x = event.clientX - target.left
     const y = event.clientY - target.top
@@ -240,6 +244,21 @@ export function Scatter({
 
   return (
     <>
+      {/* 控制器 */}
+      {
+        <Controler
+          initialMinX={initialMinX}
+          initialMaxX={initialMaxX}
+          initialMinY={initialMinY}
+          initialMaxY={initialMaxY}
+          minX={minX}
+          maxX={maxX}
+          minY={minY}
+          maxY={maxY}
+          setScale={setScale}
+          offsetY={OFFSET_HEIGHT + LEGEND_HEIGHT}
+        />
+      }
       {/* 图例 */}
       {legendData && (
         <Legend

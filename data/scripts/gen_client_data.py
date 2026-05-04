@@ -29,10 +29,10 @@ class ClientData(TypedDict):
     embedding: list[float] # 2 维向量
 
 reducer = umap.UMAP(
-    n_neighbors=30,
-    min_dist=0.2,
-    n_components=2,
-    metric='cosine',
+    n_neighbors=50, # 这个值可以根据数据的密度进行调整，较大的值会考虑更多的邻居，适合较稀疏的数据；较小的值会更关注局部结构，适合较密集的数据
+    min_dist=0.5, # 这个值控制了降维后点之间的最小距离，较小的值会使得点更紧密地聚集在一起，适合需要强调局部结构的数据；较大的值会使得点更分散，适合需要强调全局结构的数据
+    n_components=2, # 降维到二维，方便可视化
+    metric='cosine', # 使用余弦距离来衡量高维空间中的点之间的相似度，这对于文本数据的向量表示通常是一个不错的选择，因为它关注的是向量之间的角度关系，而不是它们的绝对距离
 )
 
 with open(MAJOR_DATA_PATH, 'r', encoding='utf-8') as f:
@@ -75,16 +75,7 @@ for item in reduced_data:
     item['embedding'][0] = (item['embedding'][0] - mean1) / std1 # type: ignore
     item['embedding'][1] = (item['embedding'][1] - mean2) / std2 # type: ignore
 
-# 缩放到[-9，9]范围内
-print('开始缩放...')
-min1 = min([item['embedding'][0] for item in reduced_data])
-max1 = max([item['embedding'][0] for item in reduced_data])
-min2 = min([item['embedding'][1] for item in reduced_data])
-max2 = max([item['embedding'][1] for item in reduced_data])
-for item in reduced_data:
-    item['embedding'][0] = (item['embedding'][0] - min1) / (max1 - min1) * 18 - 9
-    item['embedding'][1] = (item['embedding'][1] - min2) / (max2 - min2) * 18 - 9
-
+# 保存结果
 with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
-    json.dump(reduced_data, f, ensure_ascii=False, indent=2)
+    json.dump(reduced_data, f, ensure_ascii=False)
 print(f'结果已保存到 {OUTPUT_PATH}')

@@ -14,7 +14,7 @@ export function Tooltip({ x, y, data, offsetX, offsetY }: TooltipProps) {
       className={`fixed z-50 w-60 border bg-blue-50`}
       style={{ left: x + (offsetX ?? 0), top: y + (offsetY ?? 0) }}
     >
-      <div className="mb-1 px-2.5 pt-2 text-[16px] font-semibold text-blue-950">
+      <div className="mb-0.75 px-2.5 pt-2 text-[16px] font-semibold text-blue-950">
         {data['专业名称']}
       </div>
       <div className="flex items-center justify-between px-2.5 pb-2 text-xs font-semibold text-blue-950">
