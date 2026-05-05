@@ -8,9 +8,7 @@ import { Slider } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '../Button'
-
-const SET_SCALE_DEBOUNCE_MS = 10
-const MIN_SCALE_RANGE = 1
+import { CONTROLLER_SET_SCALE_DEBOUNCE_MS, CONTROLLER_MIN_SCALE_RANGE } from './config'
 
 type ControlerProps = {
   offsetX?: number
@@ -72,7 +70,7 @@ export function Controler({
     }
     setScaleTimeoutRef.current = setTimeout(() => {
       _setScale(scale)
-    }, SET_SCALE_DEBOUNCE_MS)
+    }, CONTROLLER_SET_SCALE_DEBOUNCE_MS)
   }
 
   useEffect(() => {
@@ -146,7 +144,7 @@ export function Controler({
           step={0.01}
           // @ts-expect-error 不知道为啥开启 draggableTrack 后类型报错了
           onChange={(value) => {
-            if (value[1] - value[0] < MIN_SCALE_RANGE) {
+            if (value[1] - value[0] < CONTROLLER_MIN_SCALE_RANGE) {
               return
             }
             const nextScale = {
@@ -172,7 +170,7 @@ export function Controler({
           step={0.01}
           // @ts-expect-error 不知道为啥开启 draggableTrack 后类型报错了
           onChange={(value) => {
-            if (value[1] - value[0] < MIN_SCALE_RANGE) {
+            if (value[1] - value[0] < CONTROLLER_MIN_SCALE_RANGE) {
               return
             }
             const nextScale = {

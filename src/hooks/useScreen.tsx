@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 
-const UPDATE_FPS = 5
+import { GLOBAL_FPS } from '../consts/fps'
 
 type Screen = {
   width: number
@@ -21,7 +21,7 @@ export function useScreen({ offsetHeight, offsetWidth }: UseScreenParams = {}): 
   useEffect(() => {
     const handleResize = () => {
       const now = Date.now()
-      if (now - lastUpdateRef.current < 1000 / UPDATE_FPS) {
+      if (now - lastUpdateRef.current < 1000 / GLOBAL_FPS) {
         return
       }
       lastUpdateRef.current = now

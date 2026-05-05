@@ -1,15 +1,28 @@
 import { Application, extend } from '@pixi/react'
 import { Graphics, Text, Container } from 'pixi.js'
-import { type PointerEvent, useMemo, useRef, useState } from 'react'
+import { type PointerEvent, useCallback, useMemo, useRef, useState } from 'react'
 
 import type { ClientData } from '../../../data/types'
 import { type ScatterData, type Subject, SUBJECTS } from '../../hooks/useData'
 import { useScreen } from '../../hooks/useScreen'
 import { generateColorMapping } from './colors'
+import {
+  SCATTER_POINT_RADIUS,
+  TOOLTIP_WIDTH,
+  TOOLTIP_HEIGHT,
+  SCATTER_LABEL_FONT_SIZE,
+  SCATTER_LABEL_OFFSET_Y,
+  SCATTER_LABEL_SAFEZONE_X,
+  SCATTER_LABEL_SAFEZONE_Y,
+  SCATTER_INTERACTION_MOBILE_EXPAND,
+  SCATTER_INTERACTION_THROTTLE_MS,
+  SCATTER_SCALE_OFFSET,
+  SCATTER_LEGEND_HEIGHT,
+  SCATTER_OFFSET_HEIGHT,
+} from './config'
 import { Controler } from './Controler'
 import { Legend } from './Legend'
 import { Tooltip } from './Tooltip'
-import { parseOffset } from './utils'
 
 extend({ Graphics, Text, Container })
 
@@ -27,19 +40,6 @@ type Point = {
   name: string
 }
 
-const POINT_RADIUS = 3
-const TOOLTIP_WIDTH = 300
-const TOOLTIP_HEIGHT = 116
-const OFFSET_HEIGHT = parseOffset('3.5rem')
-const LEGEND_HEIGHT = parseOffset('2.5rem')
-const LABEL_FONT_SIZE = 12
-const LABEL_OFFSET_Y = -22
-const LABEL_SAFEZONE_Y = 20
-const LABEL_SAFEZONE_X = 15
-const INTERACTION_THROTTLE_MS = 30
-const INTERACTION_MOBILE_EXPAND = 5
-const SCALE_OFFSET = 0.2
-
 export function Scatter({ catagory, scatterData, openModal: _openModal }: ScatterProps) {
   const openModal = useMemo(() => {
     return (code: string) => {
@@ -51,7 +51,9 @@ export function Scatter({ catagory, scatterData, openModal: _openModal }: Scatte
     }
   }, [scatterData, _openModal])
 
-  const { width, height } = useScreen({ offsetHeight: OFFSET_HEIGHT + LEGEND_HEIGHT })
+  const { width, height } = useScreen({
+    offsetHeight: SCATTER_OFFSET_HEIGHT + SCATTER_LEGEND_HEIGHT,
+  })
 
   const fields = useMemo(() => {
     if (!scatterData) return null
@@ -84,10 +86,10 @@ export function Scatter({ catagory, scatterData, openModal: _openModal }: Scatte
     const xValues = allData.map((item) => item.a)
     const yValues = allData.map((item) => item.b)
     return {
-      initialMinX: Math.min(...xValues) - SCALE_OFFSET,
-      initialMaxX: Math.max(...xValues) + SCALE_OFFSET,
-      initialMinY: Math.min(...yValues) - SCALE_OFFSET,
-      initialMaxY: Math.max(...yValues) + SCALE_OFFSET,
+      initialMinX: Math.min(...xValues) - SCATTER_SCALE_OFFSET,
+      initialMaxX: Math.max(...xValues) + SCATTER_SCALE_OFFSET,
+      initialMinY: Math.min(...yValues) - SCATTER_SCALE_OFFSET,
+      initialMaxY: Math.max(...yValues) + SCATTER_SCALE_OFFSET,
     }
   }, [catagory, scatterData])
 
@@ -137,34 +139,110 @@ export function Scatter({ catagory, scatterData, openModal: _openModal }: Scatte
       }))
   }, [data, width, height, colorMap, colorKey, minX, maxX, minY, maxY])
 
+  const drawPoints = useCallback(
+    (graphics: Graphics) => {
+      graphics.clear()
+      const colorGroups = new Map<string, Point[]>()
+      for (const point of points) {
+        if (!colorGroups.has(point.c)) colorGroups.set(point.c, [])
+        colorGroups.get(point.c)!.push(point)
+      }
+      for (const [color, colorPoints] of colorGroups) {
+        graphics.setStrokeStyle({ width: 1, color: '#162456' })
+        for (const point of colorPoints) {
+          graphics.circle(point.x, point.y, SCATTER_POINT_RADIUS)
+        }
+        graphics.fill({ color })
+        graphics.stroke()
+      }
+    },
+    [points],
+  )
+
+  const pointsGrid = useMemo(() => {
+    const grid: Record<number, Record<number, Point[]>> = {}
+    const cellSize = 20
+    for (const p of points) {
+      const r = Math.floor(p.y / cellSize)
+      const c = Math.floor(p.x / cellSize)
+      if (!grid[r]) grid[r] = {}
+      if (!grid[r][c]) grid[r][c] = []
+      grid[r][c].push(p)
+    }
+    return grid
+  }, [points])
+
   const getPointAtPosition = useMemo(() => {
     return (x: number, y: number, mobile?: boolean) => {
-      const distance = mobile ? POINT_RADIUS ** 2 * INTERACTION_MOBILE_EXPAND : POINT_RADIUS ** 2
-      for (const point of points) {
-        const dx = point.x - x
-        const dy = point.y - y
-        if (dx ** 2 + dy ** 2 <= distance) {
-          return point
+      const distanceSq = mobile
+        ? SCATTER_POINT_RADIUS ** 2 * SCATTER_INTERACTION_MOBILE_EXPAND
+        : SCATTER_POINT_RADIUS ** 2
+      const searchRadius = Math.ceil(Math.sqrt(distanceSq))
+      const cellSize = 20
+
+      const minR = Math.floor((y - searchRadius) / cellSize)
+      const maxR = Math.floor((y + searchRadius) / cellSize)
+      const minC = Math.floor((x - searchRadius) / cellSize)
+      const maxC = Math.floor((x + searchRadius) / cellSize)
+
+      for (let r = minR; r <= maxR; r++) {
+        const row = pointsGrid[r]
+        if (!row) continue
+        for (let c = minC; c <= maxC; c++) {
+          const cell = row[c]
+          if (!cell) continue
+          for (const point of cell) {
+            const dx = point.x - x
+            const dy = point.y - y
+            if (dx ** 2 + dy ** 2 <= distanceSq) {
+              return point
+            }
+          }
         }
       }
       return null
     }
-  }, [points])
+  }, [pointsGrid])
 
   const visibleLabels = useMemo(() => {
+    const CELL_SIZE = 120
     const visible: Array<(typeof points)[number]> = []
-    const occupiedBoxes: { left: number; top: number; right: number; bottom: number }[] = []
+    const grid: Record<
+      number,
+      Record<number, { left: number; top: number; right: number; bottom: number }[]>
+    > = {}
     for (const point of points) {
-      const labelWidth = point.name.length * LABEL_FONT_SIZE
-      const left = point.x - labelWidth / 2 - LABEL_SAFEZONE_X
-      const top = point.y + LABEL_OFFSET_Y - LABEL_SAFEZONE_Y
-      const right = point.x - labelWidth / 2 + labelWidth + LABEL_SAFEZONE_X
-      const bottom = top + LABEL_SAFEZONE_Y
-      const hasOverlap = occupiedBoxes.some(
-        (box) => left < box.right && right > box.left && top < box.bottom && bottom > box.top,
-      )
+      const labelWidth = point.name.length * SCATTER_LABEL_FONT_SIZE
+      const left = point.x - labelWidth / 2 - SCATTER_LABEL_SAFEZONE_X
+      const top = point.y + SCATTER_LABEL_OFFSET_Y - SCATTER_LABEL_SAFEZONE_Y
+      const right = point.x + labelWidth / 2 + SCATTER_LABEL_SAFEZONE_X
+      const bottom = top + SCATTER_LABEL_SAFEZONE_Y
+      const minCol = Math.floor(left / CELL_SIZE)
+      const maxCol = Math.floor(right / CELL_SIZE)
+      const minRow = Math.floor(top / CELL_SIZE)
+      const maxRow = Math.floor(bottom / CELL_SIZE)
+      let hasOverlap = false
+      for (let r = minRow; r <= maxRow && !hasOverlap; r++) {
+        const row = grid[r]
+        if (!row) continue
+        for (let c = minCol; c <= maxCol && !hasOverlap; c++) {
+          const cell = row[c]
+          if (cell) {
+            hasOverlap = cell.some(
+              (box) => left < box.right && right > box.left && top < box.bottom && bottom > box.top,
+            )
+          }
+        }
+      }
       if (!hasOverlap) {
-        occupiedBoxes.push({ left, top, right, bottom })
+        const box = { left, top, right, bottom }
+        for (let r = minRow; r <= maxRow; r++) {
+          if (!grid[r]) grid[r] = {}
+          for (let c = minCol; c <= maxCol; c++) {
+            if (!grid[r][c]) grid[r][c] = []
+            grid[r][c].push(box)
+          }
+        }
         visible.push(point)
       }
     }
@@ -212,7 +290,7 @@ export function Scatter({ catagory, scatterData, openModal: _openModal }: Scatte
   const mouseThrottleRef = useRef(0)
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     const now = performance.now()
-    if (now - mouseThrottleRef.current < INTERACTION_THROTTLE_MS) {
+    if (now - mouseThrottleRef.current < SCATTER_INTERACTION_THROTTLE_MS) {
       return
     }
     mouseThrottleRef.current = now
@@ -256,15 +334,15 @@ export function Scatter({ catagory, scatterData, openModal: _openModal }: Scatte
           minY={minY}
           maxY={maxY}
           setScale={setScale}
-          offsetY={OFFSET_HEIGHT + LEGEND_HEIGHT}
+          offsetY={SCATTER_OFFSET_HEIGHT + SCATTER_LEGEND_HEIGHT}
         />
       }
       {/* 图例 */}
       {legendData && (
         <Legend
           data={legendData}
-          height={LEGEND_HEIGHT}
-          offsetY={OFFSET_HEIGHT}
+          height={SCATTER_LEGEND_HEIGHT}
+          offsetY={SCATTER_OFFSET_HEIGHT}
           hideFields={hideFields}
           setHideFields={setHideFields}
         />
@@ -275,7 +353,7 @@ export function Scatter({ catagory, scatterData, openModal: _openModal }: Scatte
           x={tooltipPosition.x}
           y={tooltipPosition.y}
           data={tooltipItem}
-          offsetY={OFFSET_HEIGHT + LEGEND_HEIGHT}
+          offsetY={SCATTER_OFFSET_HEIGHT + SCATTER_LEGEND_HEIGHT}
         />
       )}
       {/* 事件 */}
@@ -284,7 +362,7 @@ export function Scatter({ catagory, scatterData, openModal: _openModal }: Scatte
         style={{
           width,
           height,
-          top: OFFSET_HEIGHT + LEGEND_HEIGHT,
+          top: SCATTER_OFFSET_HEIGHT + SCATTER_LEGEND_HEIGHT,
           left: 0,
         }}
         onPointerMove={handlePointerMove}
@@ -302,30 +380,15 @@ export function Scatter({ catagory, scatterData, openModal: _openModal }: Scatte
         antialias
         clearBeforeRender
       >
-        <pixiGraphics
-          key={`${width}x${height}`}
-          draw={(graphics) => {
-            graphics.clear()
-            for (const point of points) {
-              graphics
-                .circle(point.x, point.y, POINT_RADIUS)
-                .fill({ color: point.c })
-                .setStrokeStyle({
-                  width: 1,
-                  color: '#162456',
-                })
-                .stroke()
-            }
-          }}
-        />
+        <pixiGraphics draw={drawPoints} />
         <pixiContainer>
           {visibleLabels.map((point) => (
             <pixiText
               key={point.code}
-              x={point.x - (point.name.length * LABEL_FONT_SIZE) / 2}
-              y={point.y + LABEL_OFFSET_Y}
+              x={point.x - (point.name.length * SCATTER_LABEL_FONT_SIZE) / 2}
+              y={point.y + SCATTER_LABEL_OFFSET_Y}
               text={point.name}
-              style={{ fill: 'rgba(22,36,86,0.8)', fontSize: LABEL_FONT_SIZE }}
+              style={{ fill: 'rgba(22,36,86,0.8)', fontSize: SCATTER_LABEL_FONT_SIZE }}
             />
           ))}
         </pixiContainer>

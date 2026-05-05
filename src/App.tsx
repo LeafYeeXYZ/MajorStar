@@ -66,7 +66,6 @@ export default function App() {
   const [scatterError, setScatterError] = useState<string | null>(null)
   const [scatter, setScatter] = useState<React.ReactNode | null>(null)
   useEffect(() => {
-    setScatterLoading(true)
     setScatterError(null)
     import('./components/Scatter')
       .then(({ Scatter }) => {
