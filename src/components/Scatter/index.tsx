@@ -94,10 +94,10 @@ export function Scatter({ catagory, scatterData, openModal: _openModal }: Scatte
   }, [catagory, scatterData])
 
   const [{ minX, maxX, minY, maxY }, setScale] = useState({
-    minX: 0,
-    maxX: 0,
-    minY: 0,
-    maxY: 0,
+    minX: initialMinX,
+    maxX: initialMaxX,
+    minY: initialMinY,
+    maxY: initialMaxY,
   })
 
   useEffect(() => {
