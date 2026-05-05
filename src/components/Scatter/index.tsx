@@ -1,6 +1,6 @@
 import { Application, extend } from '@pixi/react'
 import { Graphics, Text, Container } from 'pixi.js'
-import { type PointerEvent, useCallback, useMemo, useRef, useState } from 'react'
+import { type PointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { ClientData } from '../../../data/types'
 import { type ScatterData, type Subject, SUBJECTS } from '../../hooks/useData'
@@ -94,11 +94,15 @@ export function Scatter({ catagory, scatterData, openModal: _openModal }: Scatte
   }, [catagory, scatterData])
 
   const [{ minX, maxX, minY, maxY }, setScale] = useState({
-    minX: initialMinX,
-    maxX: initialMaxX,
-    minY: initialMinY,
-    maxY: initialMaxY,
+    minX: 0,
+    maxX: 0,
+    minY: 0,
+    maxY: 0,
   })
+
+  useEffect(() => {
+    setScale({ minX: initialMinX, maxX: initialMaxX, minY: initialMinY, maxY: initialMaxY })
+  }, [initialMinX, initialMaxX, initialMinY, initialMaxY])
 
   const colorKey = useMemo(() => {
     return catagory === '全部专业' ? '学科门类' : '专业类'
