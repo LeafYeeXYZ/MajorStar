@@ -40,6 +40,9 @@ function TitleSection({ clientData, shortIntro }: TitleSectionProps) {
           </div>
         </div>
         <div className="pl-0.5 text-sm leading-6 font-semibold text-blue-950/90">{shortIntro}</div>
+        <div className="bg-white pt-1 pl-0.5 text-[0.7rem] text-blue-950/70">
+          本页面专业介绍由AI生成，仅供参考
+        </div>
       </div>
     </section>
   )

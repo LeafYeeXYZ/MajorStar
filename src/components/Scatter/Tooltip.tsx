@@ -23,8 +23,11 @@ export function Tooltip({ x, y, data, offsetX, offsetY }: TooltipProps) {
           {data['学科门类']}-{data['专业类']}
         </div>
       </div>
-      <div className="border-t border-blue-950 bg-white px-2.5 py-2 text-xs leading-5 font-semibold text-blue-950">
+      <div className="border-t border-blue-950 bg-white px-2.5 pt-2 text-xs leading-5 font-semibold text-blue-950">
         {data['简介']}
+      </div>
+      <div className="bg-white px-2.5 pt-1 pb-2 text-[0.7rem] text-blue-950/70">
+        上述专业简介由AI生成，仅供参考
       </div>
     </div>
   )
