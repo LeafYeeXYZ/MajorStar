@@ -33,6 +33,11 @@ export function Legend({ data, height, offsetX, offsetY, hideFields, setHideFiel
             hideItemsRef.current = newHideItems
             setHideFields(newHideItems)
           }}
+          onDoubleClick={() => {
+            const newHideItems = new Set([item.name])
+            hideItemsRef.current = newHideItems
+            setHideFields(newHideItems)
+          }}
         >
           <div
             className="h-3 w-3 border border-blue-950"
