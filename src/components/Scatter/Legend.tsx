@@ -34,7 +34,11 @@ export function Legend({ data, height, offsetX, offsetY, hideFields, setHideFiel
             setHideFields(newHideItems)
           }}
           onDoubleClick={() => {
-            const newHideItems = new Set([item.name])
+            const newHideItems = new Set(
+              data
+                .filter((legendItem) => legendItem.name !== item.name)
+                .map((legendItem) => legendItem.name),
+            )
             hideItemsRef.current = newHideItems
             setHideFields(newHideItems)
           }}
