@@ -96,7 +96,7 @@ export default function App() {
       {
         title: '专业星云',
         description:
-          '图中的每个点都代表一个专业, 共845个 (2026年普通高等学校本科专业目录中的所有专业).',
+          '图中的每个点都代表一个专业, 共883个 (2026年普通高等学校本科专业目录中的所有专业).',
       },
       {
         title: '专业相似度',
@@ -113,8 +113,7 @@ export default function App() {
       },
       {
         title: '专业分类',
-        description:
-          '你可以在这里选择专业星云中要显示的指定的学科门类. 默认显示全部12个门类的专业.',
+        description: '你可以在这里选择专业星云中要显示的指定的学科门类. 默认显示全部专业.',
         target: () => catagoryRef.current!,
       },
       {
@@ -222,7 +221,7 @@ export default function App() {
         <div className="flex flex-row flex-nowrap items-center gap-3 overflow-auto text-sm font-semibold">
           <div className="flex w-max items-center" ref={catagoryRef}>
             <Select
-              className="h-9! w-26!"
+              className="h-9! w-28!"
               value={catagory}
               onChange={(value) => {
                 setCategory(value)

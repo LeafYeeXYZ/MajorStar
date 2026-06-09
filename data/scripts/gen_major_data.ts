@@ -8,7 +8,7 @@ import type { RawData, MajorData } from '../types'
 
 const RAW_DATA_PATH = 'data/raw_data.json' // 记得压缩
 const OUTPUT_PATH = 'data/major_data.json' // 记得压缩
-const CHAT_AI_BASE_URL = 'https://api.deepseek.com'
+const CHAT_AI_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
 const CHAT_AI_API_KEY = '' // 随用随填
 const CHAT_AI_MODEL = 'deepseek-v4-pro'
 const CHAT_AI_ENABLE_THINKING = true
@@ -16,12 +16,12 @@ const EMBEDDING_AI_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1
 const EMBEDDING_AI_API_KEY = '' // 随用随填
 const EMBEDDING_AI_MODEL = 'text-embedding-v4'
 const EMBEDDING_DIMENSION = 1024
-const MAX_PARALLEL_REQUESTS = 50
+const MAX_PARALLEL_REQUESTS = 100
 
 const ITEMS_TO_EMBED: (keyof typeof RESPONSE_SCHEMA.shape)[] = ['简介']
 const INTRODUCTION_CHAR_COUNT = [40, 60]
-const MIN_CHAR_COUNT = 150
-const MAX_CHAR_COUNT = 200
+const MIN_CHAR_COUNT = 100
+const MAX_CHAR_COUNT = 300
 
 export const RESPONSE_SCHEMA = z.object({
   简介: z.string().min(INTRODUCTION_CHAR_COUNT[0]).max(INTRODUCTION_CHAR_COUNT[1]),
@@ -62,14 +62,7 @@ function GENERATE_PROMPT(data: RawData) {
 
 只输出 JSON，不要任何解释文字，不要 Markdown，不要代码块。JSON 格式如下：
 
-{
-  "简介": "...",
-  "知识结构与学习方式": "...",
-  "人格特质与能力要求": "...",
-  "就业方向与竞争门槛": "...",
-  "未来发展与常见误解": "...",
-  "人生状态与自我实现": "..."
-}
+${JSON.stringify(RESPONSE_SCHEMA.toJSONSchema(), null, 2)}
 `.trim()
 }
 

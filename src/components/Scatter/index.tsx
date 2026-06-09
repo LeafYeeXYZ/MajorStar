@@ -60,9 +60,7 @@ export function Scatter({ catagory, scatterData, openModal: _openModal }: Scatte
     return catagory === '全部专业'
       ? new Set(SUBJECTS)
       : new Set(
-          scatterData.subjects[SUBJECTS.indexOf(catagory as Subject)].map(
-            (item) => item['专业类'] ?? '',
-          ),
+          scatterData.subjects[SUBJECTS.indexOf(catagory as Subject)].map((item) => item['专业类']),
         )
   }, [catagory, scatterData])
 
@@ -73,7 +71,7 @@ export function Scatter({ catagory, scatterData, openModal: _openModal }: Scatte
     return catagory === '全部专业'
       ? scatterData.all.filter((item) => !hideFields?.has(item['学科门类'] ?? ''))
       : scatterData.subjects[SUBJECTS.indexOf(catagory as Subject)].filter(
-          (item) => !hideFields?.has(item['专业类'] ?? ''),
+          (item) => !hideFields?.has(item['专业类']),
         )
   }, [catagory, scatterData, hideFields])
 

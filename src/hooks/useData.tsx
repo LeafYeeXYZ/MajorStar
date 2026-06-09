@@ -15,6 +15,7 @@ export type Subject =
   | '医学'
   | '管理学'
   | '艺术学'
+  | '交叉学科'
 
 export type ScatterData = {
   all: (ClientData & {
@@ -41,6 +42,7 @@ export const SUBJECTS: Subject[] = [
   '医学',
   '管理学',
   '艺术学',
+  '交叉学科',
 ]
 
 export function useData() {
@@ -62,6 +64,7 @@ export function useData() {
         const scatterData: ScatterData = {
           all: rawData.map((item) => ({
             ...item,
+            专业类: item['专业类'] || '不分专业类',
             a: item.embedding[0],
             b: item.embedding[1],
           })),
@@ -70,6 +73,7 @@ export function useData() {
               .filter((item) => item['学科门类'] === subject)
               .map((item) => ({
                 ...item,
+                专业类: item['专业类'] || '不分专业类',
                 a: item.embedding[0],
                 b: item.embedding[1],
               })),
