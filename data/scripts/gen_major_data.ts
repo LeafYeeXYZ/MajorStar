@@ -3,18 +3,18 @@ import * as fs from 'node:fs/promises'
 import OpenAI from 'openai'
 import z from 'zod'
 
-// bun run data/scripts/gen_major_data.ts
+// vp run data/scripts/gen_major_data.ts
 import type { RawData, MajorData } from '../types'
 
 const RAW_DATA_PATH = 'data/raw_data.json' // 记得压缩
 const OUTPUT_PATH = 'data/major_data.json' // 记得压缩
 const CHAT_AI_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
 const CHAT_AI_API_KEY = '' // 随用随填
-const CHAT_AI_MODEL = 'deepseek-v4-pro'
+const CHAT_AI_MODEL = ''
 const CHAT_AI_ENABLE_THINKING = true
 const EMBEDDING_AI_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
 const EMBEDDING_AI_API_KEY = '' // 随用随填
-const EMBEDDING_AI_MODEL = 'text-embedding-v4'
+const EMBEDDING_AI_MODEL = 'qwen3.7-text-embedding'
 const EMBEDDING_DIMENSION = 1024
 const MAX_PARALLEL_REQUESTS = 100
 

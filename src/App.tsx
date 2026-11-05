@@ -183,7 +183,7 @@ export default function App() {
                     </a>
                   </div>
                   <div>专业数据来源: 普通高等学校本科专业目录 (2026年)</div>
-                  <div>专业描述来源: DeepSeek-V4-Pro 生成, 仅供参考</div>
+                  <div>专业描述来源: AI生成, 仅供参考</div>
                 </div>
               }
             >

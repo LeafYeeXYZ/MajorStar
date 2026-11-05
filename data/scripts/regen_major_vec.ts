@@ -2,14 +2,14 @@ import * as fs from 'node:fs/promises'
 
 import OpenAI from 'openai'
 
-// bun run data/scripts/regen_major_vec.ts
+// vp run data/scripts/regen_major_vec.ts
 import type { MajorData } from '../types'
 import { RESPONSE_SCHEMA } from './gen_major_data.ts'
 
 const DATA_PATH = 'data/major_data.json' // 记得压缩
 const EMBEDDING_AI_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
 const EMBEDDING_AI_API_KEY = '' // 随用随填
-const EMBEDDING_AI_MODEL = 'text-embedding-v4'
+const EMBEDDING_AI_MODEL = 'qwen3.7-text-embedding'
 const EMBEDDING_DIMENSION = 1024
 const MAX_PARALLEL_REQUESTS = 10
 
