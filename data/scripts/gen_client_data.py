@@ -1,4 +1,4 @@
-# python data/scripts/gen_client_data.py
+# uv run data/scripts/gen_client_data.py
 import json
 import numpy as np
 import umap # type: ignore

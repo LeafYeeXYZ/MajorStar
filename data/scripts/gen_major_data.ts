@@ -3,7 +3,7 @@ import * as fs from 'node:fs/promises'
 import OpenAI from 'openai'
 import z from 'zod'
 
-// vp run data/scripts/gen_major_data.ts
+// vpx data/scripts/gen_major_data.ts
 import type { RawData, MajorData } from '../types'
 
 const RAW_DATA_PATH = 'data/raw_data.json' // 记得压缩

@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises'
 
-// vp run data/scripts/gen_server_data.ts
+// vpx data/scripts/gen_server_data.ts
 import type { MajorData, ServerData } from '../types'
 
 const MAJOR_DATA_PATH = 'data/major_data.json'
